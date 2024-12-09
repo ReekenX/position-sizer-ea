@@ -2318,10 +2318,10 @@ void CPositionSizeCalculator::ProcessTPChange(const bool tp_button_click)
         // Profit = Risk * N + Commission * 2.
         // TP distance =  (Risk * N + Commission * 2) / Point_value.
         if ((UnitCost_reward != 0) && (OutputPositionSize != 0) && (TickSize != 0))
-            tp_distance = (RiskMoney * TP_Multiplier + OutputPositionSize * commission * 2) / (OutputPositionSize * UnitCost_reward / TickSize);
+            tp_distance = (RiskMoney * TP_MultiplierVar + OutputPositionSize * commission * 2) / (OutputPositionSize * UnitCost_reward / TickSize);
         if (tEntryLevel < tStopLossLevel) tp_distance = -tp_distance;
     }
-    else tp_distance = (tEntryLevel - tStopLossLevel) * TP_Multiplier;
+    else tp_distance = (tEntryLevel - tStopLossLevel) * TP_MultiplierVar;
 
     sets.TakeProfitLevel = NormalizeDouble(tEntryLevel + tp_distance, _Digits);
 
@@ -2346,7 +2346,7 @@ void CPositionSizeCalculator::ProcessTPChange(const bool tp_button_click)
         tTakeProfitLevel = sets.TakeProfitLevel;
         if (sets.ATRMultiplierSL > 0)
         {
-            sets.ATRMultiplierTP = NormalizeDouble(sets.ATRMultiplierSL * TP_Multiplier, 2);
+            sets.ATRMultiplierTP = NormalizeDouble(sets.ATRMultiplierSL * TP_MultiplierVar, 2);
             m_EdtATRMultiplierTP.Text(DoubleToString(sets.ATRMultiplierTP, 2));
         }
         if (!sets.TPDistanceInPoints) m_EdtTP.Text(DoubleToString(tTakeProfitLevel, _Digits));
@@ -2797,6 +2797,15 @@ void CPositionSizeCalculator::OnClickBtnStopLoss()
 
 void CPositionSizeCalculator::OnClickBtnTakeProfit()
 {
+    TP_MultiplierVar = TP_MultiplierVar + 1;
+    if (TP_MultiplierVar > 10) {
+        TP_MultiplierVar = 1;
+    }
+    m_BtnTakeProfit.Text("1:" + DoubleToString(TP_MultiplierVar, 0) + " RRR");
+    ProcessTPChange(true);
+
+    return;
+    
     // If "TP locked on SL" mode was on, turn it off.
     if (sets.TPLockedOnSL)
     {
@@ -2809,7 +2818,7 @@ void CPositionSizeCalculator::OnClickBtnTakeProfit()
     {
         sets.TPLockedOnSL = true;
         m_BtnTakeProfit.ColorBackground(CONTROLS_BUTTON_COLOR_TP_LOCKED);
-    }
+   }
 
     ProcessTPChange(true);
 }
