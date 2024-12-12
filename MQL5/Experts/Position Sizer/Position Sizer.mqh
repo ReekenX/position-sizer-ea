@@ -1230,6 +1230,8 @@ void CPositionSizeCalculator::InitControlsValues()
         else m_BtnTakeProfit.Text(TRANSLATION_LABEL_TAKEPROFIT_MULTIPLE_DISTANCE + " x " + DoubleToString(TP_Multiplier, CountDecimalPlaces(TP_Multiplier)) + ":");
     }
 
+    m_BtnTakeProfit.Text("1:" + DoubleToString(TP_MultiplierVar, 0) + " RRR");
+
     if (sets.EntryType == Pending)
     {
         m_BtnOrderType.Text(TRANSLATION_BUTTON_ORDER_TYPE_PENDING);

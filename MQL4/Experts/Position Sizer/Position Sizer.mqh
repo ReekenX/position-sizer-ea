@@ -1129,6 +1129,8 @@ void CPositionSizeCalculator::InitControlsValues()
         else m_BtnTakeProfit.Text("TP x " + DoubleToString(TP_Multiplier, CountDecimalPlaces(TP_Multiplier)) + ":");
     }
 
+    m_BtnTakeProfit.Text("1:" + DoubleToString(TP_MultiplierVar, 0) + " RRR");
+
     if (sets.EntryType)
     {
         m_BtnOrderType.Text("Pending");
