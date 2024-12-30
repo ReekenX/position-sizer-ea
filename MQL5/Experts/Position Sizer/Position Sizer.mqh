@@ -545,8 +545,8 @@ bool CPositionSizeCalculator::CreateObjects()
     string takeprofit_label_text = TRANSLATION_LABEL_TAKEPROFIT + ":";
     if (sets.TPDistanceInPoints) takeprofit_label_text = TRANSLATION_BUTTON_TP + ":";
     if (!ButtonCreate(MainTabList, m_BtnTakeProfitsNumberAdd, first_column_start, y, first_column_start + v_spacing * 4 - 1, y + element_height, "m_BtnTakeProfitsNumberAdd", "+", TRANSLATION_TOOLTIP_TAKEPROFIT_ADD))                    return false;
-    if (!ButtonCreate(MainTabList, m_BtnTakeProfitsNumberMinus, first_column_start + v_spacing * 4, y, first_column_start + v_spacing * 4 - 1, y + element_height, "m_BtnTakeProfitsNumberMinus", "-", TRANSLATION_TOOLTIP_TAKEPROFIT_ADD))                    return false;
-    if (!ButtonCreate(MainTabList, m_BtnTakeProfit, first_column_start + v_spacing * 4, y, first_column_start + v_spacing * 3 + normal_label_width, y + element_height, "m_BtnTakeProfit", takeprofit_label_text, TRANSLATION_TOOLTIP_BUTTON_TP))                    return false;
+    if (!ButtonCreate(MainTabList, m_BtnTakeProfit, first_column_start + v_spacing * 8, y, first_column_start + v_spacing * 3 + normal_label_width, y + element_height, "m_BtnTakeProfit", takeprofit_label_text, TRANSLATION_TOOLTIP_BUTTON_TP))                    return false;
+    if (!ButtonCreate(MainTabList, m_BtnTakeProfitsNumberMinus, first_column_start + v_spacing * 4 + 1, y, first_column_start + v_spacing * 8 - 2, y + element_height, "m_BtnTakeProfitsNumberMinus", "-", TRANSLATION_TOOLTIP_TAKEPROFIT_ADD))                    return false;
     if (!EditCreate(MainTabList, m_EdtTP, second_column_start, y, second_column_start + normal_edit_width, y + element_height, "m_EdtTP", ""))                                                                 return false;
     if (!ButtonCreate(MainTabList, m_BtnTakeProfitIncrease, second_column_start + normal_edit_width + 1, y, second_column_start + normal_edit_width + v_spacing * 4, y + element_height / 2, "m_BtnTakeProfitIncrease", "+", TRANSLATION_TOOLTIP_TAKEPROFIT_INCREASE))                    return false;
     if (!ButtonCreate(MainTabList, m_BtnTakeProfitDecrease, second_column_start + normal_edit_width + 1, y + element_height / 2, second_column_start + normal_edit_width + v_spacing * 4, y + element_height, "m_BtnTakeProfitDecrease", "-", TRANSLATION_TOOLTIP_TAKEPROFIT_DECREASE))                    return false;
@@ -3477,6 +3477,8 @@ void CPositionSizeCalculator::OnClickBtnStopPriceDecrease()
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
 {
+    if (TP_MultiplierVar == 1) return;
+
     TP_MultiplierVar--;
 
     m_BtnTakeProfit.Text("1:" + DoubleToString(TP_MultiplierVar, 0) + " RRR");
