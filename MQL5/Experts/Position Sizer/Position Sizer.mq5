@@ -36,6 +36,7 @@ string PanelCaptionBase = "";
 // Custom variables:
 double TP_MultiplierVar = 1;
 bool IsOrderOnNextBar = false;
+datetime CurrentBarIndex = 0;
 
 input group "Compactness"
 input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?
@@ -600,6 +601,30 @@ void OnTick()
     ExtDialog.RefreshValues();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
+
+    if (IsOrderOnNextBar) DoAutoTrade();
+}
+
+void DoAutoTrade()
+{
+    if (CurrentBarIndex != iTime(NULL, PERIOD_M1, 0))
+    {
+        CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+
+        bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
+
+        if (sets.TradeDirection == Long && isBuyBar)
+        {
+            MessageBox("Buy bar detected", "Position Sizer", MB_OK);
+            ExtDialog.OnClickBtnOrderOnNextBar();
+        }
+
+        if (sets.TradeDirection == Short && !isBuyBar)
+        {
+            MessageBox("Sell bar detected", "Position Sizer", MB_OK);
+            ExtDialog.OnClickBtnOrderOnNextBar();
+        }
+    }
 }
 
 void OnChartEvent(const int id,

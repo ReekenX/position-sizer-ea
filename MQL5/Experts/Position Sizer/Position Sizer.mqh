@@ -3482,7 +3482,12 @@ void CPositionSizeCalculator::OnClickBtnStopPriceDecrease()
 void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
 {
     IsOrderOnNextBar = !IsOrderOnNextBar;
+    
     m_BtnOrderOnNextBar.Text(IsOrderOnNextBar ? "T" : " ");
+
+    if (IsOrderOnNextBar) {
+        CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+    }
 }
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
