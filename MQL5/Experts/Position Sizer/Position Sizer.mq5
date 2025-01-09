@@ -32,7 +32,10 @@ double TakeProfitLevel = 0;
 double StopPriceLevel = 0;
 string PanelCaption = "";
 string PanelCaptionBase = "";
+
+// Custom variables:
 double TP_MultiplierVar = 1;
+bool IsOrderOnNextBar = false;
 
 input group "Compactness"
 input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?

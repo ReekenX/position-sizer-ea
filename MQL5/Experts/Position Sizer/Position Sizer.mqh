@@ -76,6 +76,7 @@ public:
     virtual void     EmulateMinMaxClick();
             void     OnClickBtnTakeProfitsNumberAdd();
             void     OnClickBtnTakeProfitsNumberMinus();
+            void     OnClickBtnOrderOnNextBar();
             void     OnClickBtnTakeProfitsNumberRemove();
             void     OnClickBtnTPsInward();
             void     OnClickBtnTPsOutward();
@@ -201,7 +202,7 @@ ON_EVENT(ON_CLICK, m_BtnStopLossDecrease, OnClickBtnStopLossDecrease)
 ON_EVENT(ON_END_EDIT, m_EdtTP, OnEndEditEdtTP)
 ON_EVENT(ON_CLICK, m_BtnTakeProfitsNumberAdd, OnClickBtnTakeProfitsNumberAdd)
 ON_EVENT(ON_CLICK, m_BtnTakeProfitsNumberMinus, OnClickBtnTakeProfitsNumberMinus)
-ON_EVENT(ON_CLICK, m_BtnOrderOnNextBar, OnClickBtnTakeProfitsNumberMinus)
+ON_EVENT(ON_CLICK, m_BtnOrderOnNextBar, OnClickBtnOrderOnNextBar)
 ON_EVENT(ON_CLICK, m_BtnTakeProfitIncrease, OnClickBtnTakeProfitIncrease)
 ON_EVENT(ON_CLICK, m_BtnTakeProfitDecrease, OnClickBtnTakeProfitDecrease)
 ON_EVENT(ON_END_EDIT, m_EdtStopPrice, OnEndEditEdtStopPrice)
@@ -548,7 +549,7 @@ bool CPositionSizeCalculator::CreateObjects()
     if (!ButtonCreate(MainTabList, m_BtnTakeProfitsNumberAdd, first_column_start, y, first_column_start + v_spacing * 4 - 1, y + element_height, "m_BtnTakeProfitsNumberAdd", "+", TRANSLATION_TOOLTIP_TAKEPROFIT_ADD))                    return false;
     if (!ButtonCreate(MainTabList, m_BtnTakeProfit, first_column_start + v_spacing * 12, y, first_column_start + v_spacing * 3 + normal_label_width, y + element_height, "m_BtnTakeProfit", takeprofit_label_text, TRANSLATION_TOOLTIP_BUTTON_TP))                    return false;
     if (!ButtonCreate(MainTabList, m_BtnTakeProfitsNumberMinus, first_column_start + v_spacing * 4 + 1, y, first_column_start + v_spacing * 8 - 2, y + element_height, "m_BtnTakeProfitsNumberMinus", "-", TRANSLATION_TOOLTIP_TAKEPROFIT_ADD))                    return false;
-    if (!ButtonCreate(MainTabList, m_BtnOrderOnNextBar, first_column_start + v_spacing * 8 + 1, y, first_column_start + v_spacing * 12 - 2, y + element_height, "m_BtnOrderOnNextBar", "T", TRANSLATION_TOOLTIP_TAKEPROFIT_ADD))                    return false;
+    if (!ButtonCreate(MainTabList, m_BtnOrderOnNextBar, first_column_start + v_spacing * 8 + 1, y, first_column_start + v_spacing * 12 - 2, y + element_height, "m_BtnOrderOnNextBar", " ", TRANSLATION_TOOLTIP_TAKEPROFIT_ADD))                    return false;
     if (!EditCreate(MainTabList, m_EdtTP, second_column_start, y, second_column_start + normal_edit_width, y + element_height, "m_EdtTP", ""))                                                                 return false;
     if (!ButtonCreate(MainTabList, m_BtnTakeProfitIncrease, second_column_start + normal_edit_width + 1, y, second_column_start + normal_edit_width + v_spacing * 4, y + element_height / 2, "m_BtnTakeProfitIncrease", "+", TRANSLATION_TOOLTIP_TAKEPROFIT_INCREASE))                    return false;
     if (!ButtonCreate(MainTabList, m_BtnTakeProfitDecrease, second_column_start + normal_edit_width + 1, y + element_height / 2, second_column_start + normal_edit_width + v_spacing * 4, y + element_height, "m_BtnTakeProfitDecrease", "-", TRANSLATION_TOOLTIP_TAKEPROFIT_DECREASE))                    return false;
@@ -3476,6 +3477,12 @@ void CPositionSizeCalculator::OnClickBtnStopPriceDecrease()
         ObjectSetDouble(ChartID(), ObjectPrefix + "StopPriceLine", OBJPROP_PRICE, sets.StopPriceLevel);
         RefreshValues();
     }
+}
+
+void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
+{
+    IsOrderOnNextBar = !IsOrderOnNextBar;
+    m_BtnOrderOnNextBar.Text(IsOrderOnNextBar ? "T" : " ");
 }
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
