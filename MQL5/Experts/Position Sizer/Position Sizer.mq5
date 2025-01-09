@@ -615,13 +615,15 @@ void DoAutoTrade()
 
         if (sets.TradeDirection == Long && isBuyBar)
         {
-            MessageBox("Buy bar detected", "Position Sizer", MB_OK);
+            Trade();
+
             ExtDialog.OnClickBtnOrderOnNextBar();
         }
 
         if (sets.TradeDirection == Short && !isBuyBar)
         {
-            MessageBox("Sell bar detected", "Position Sizer", MB_OK);
+            Trade();
+
             ExtDialog.OnClickBtnOrderOnNextBar();
         }
     }
