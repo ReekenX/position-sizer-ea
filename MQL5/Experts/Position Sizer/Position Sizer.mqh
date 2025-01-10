@@ -6515,6 +6515,7 @@ void RecalculatePositionSize()
                 if (AccSize > 0) perc_risk = FormatDouble(DoubleToString(Round(OutputRiskMoney / AccSize * 100, 2), 2));
                 else perc_risk = "100";
                 label_text = perc_risk + "% (" + FormatDouble(DoubleToString(OutputRiskMoney, AccountCurrencyDigits)) + " " + AccountCurrency + ")";
+                label_text = FormatDouble(DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE) - OutputRiskMoney, AccountCurrencyDigits)) + " " + AccountCurrency;
             }
             else label_text = WarningSL;
             DrawLineLabel(ObjectPrefix + "SLAdditionalLabel", label_text, tStopLossLevel, sl_label_font_color, true);
@@ -6548,6 +6549,7 @@ void RecalculatePositionSize()
                     if (AccSize > 0) perc_risk = FormatDouble(DoubleToString(Round(MainOutputReward / AccSize * 100, 2, RoundDown), 2));
                     else perc_risk = "100";
                     label_text = perc_risk + "% (" + FormatDouble(DoubleToString(MainOutputReward, AccountCurrencyDigits)) + " " + AccountCurrency + ") " + MainOutputRR + "R";
+                    label_text = FormatDouble(DoubleToString(MainOutputReward + AccountInfoDouble(ACCOUNT_BALANCE), AccountCurrencyDigits)) + " " + AccountCurrency;
                     // When multiple TPs are used, append correct lot volume for each TP at the beginning of the additional TP label:
                     if (sets.TakeProfitsNumber > 1) label_text = FormatDouble(DoubleToString(ArrayPositionSize[0], LotStep_digits), LotStep_digits) + " Lots " + label_text;
                 }
