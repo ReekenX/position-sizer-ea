@@ -602,10 +602,10 @@ void OnTick()
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 
-    if (IsOrderOnNextBar) DoAutoTrade();
+    if (IsOrderOnNextBar) DoAggressiveAutoTrade();
 }
 
-void DoAutoTrade()
+void DoNormalAutoTrade()
 {
     if (CurrentBarIndex != iTime(NULL, PERIOD_M1, 0))
     {
@@ -623,6 +623,42 @@ void DoAutoTrade()
         if (sets.TradeDirection == Short && !isBuyBar)
         {
             Trade();
+
+            ExtDialog.OnClickBtnOrderOnNextBar();
+        }
+    }
+}
+
+void DoAggressiveAutoTrade()
+{
+    if (CurrentBarIndex != iTime(NULL, PERIOD_M1, 0))
+    {
+        CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+
+        bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
+
+        if (sets.TradeDirection == Long && isBuyBar)
+        {
+            double price;
+            if (TickSize > 0) price = NormalizeDouble(MathRound(iClose(NULL, PERIOD_M1, 1) / TickSize) * TickSize, _Digits);
+            ObjectSetDouble(ChartID(), ObjectPrefix + "EntryLine", OBJPROP_PRICE, price);
+
+            sets.SLDistanceInPoints = true;
+            sets.StopLoss = (int)MathRound(MathAbs(sets.StopLossLevel - sets.EntryLevel) / _Point);
+            ExtDialog.RefreshValues();
+
+            // Trade();
+
+            ExtDialog.OnClickBtnOrderOnNextBar();
+        }
+
+        if (sets.TradeDirection == Short && !isBuyBar)
+        {
+            double price;
+            if (TickSize > 0) price = NormalizeDouble(MathRound(iClose(NULL, PERIOD_M1, 1) / TickSize) * TickSize, _Digits);
+            ObjectSetDouble(ChartID(), ObjectPrefix + "EntryLine", OBJPROP_PRICE, price);
+
+            // Trade();
 
             ExtDialog.OnClickBtnOrderOnNextBar();
         }
