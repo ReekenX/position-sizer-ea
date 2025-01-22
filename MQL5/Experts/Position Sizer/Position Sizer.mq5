@@ -35,7 +35,7 @@ string PanelCaptionBase = "";
 
 // Custom variables:
 double TP_MultiplierVar = 1;
-bool IsOrderOnNextBar = false;
+string DoAutoTrading = "No";
 datetime CurrentBarIndex = 0;
 
 input group "Compactness"
@@ -602,7 +602,8 @@ void OnTick()
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 
-    if (IsOrderOnNextBar) DoAggressiveAutoTrade();
+    if (DoAutoTrading == "Aggressive") DoAggressiveAutoTrade();
+    else if (DoAutoTrading == "Normal") DoNormalAutoTrade();
 }
 
 void DoNormalAutoTrade()
@@ -617,14 +618,14 @@ void DoNormalAutoTrade()
         {
             Trade();
 
-            ExtDialog.OnClickBtnOrderOnNextBar();
+            DoAutoTrading = "No";
         }
 
         if (sets.TradeDirection == Short && !isBuyBar)
         {
             Trade();
 
-            ExtDialog.OnClickBtnOrderOnNextBar();
+            DoAutoTrading = "No";
         }
     }
 }
@@ -639,28 +640,48 @@ void DoAggressiveAutoTrade()
 
         if (sets.TradeDirection == Long && isBuyBar)
         {
-            double price;
-            if (TickSize > 0) price = NormalizeDouble(MathRound(iClose(NULL, PERIOD_M1, 1) / TickSize) * TickSize, _Digits);
-            ObjectSetDouble(ChartID(), ObjectPrefix + "EntryLine", OBJPROP_PRICE, price);
+            sets.EntryType = Instant;
+            ExtDialog.OnClickBtnOrderType();
 
-            sets.SLDistanceInPoints = true;
-            sets.StopLoss = (int)MathRound(MathAbs(sets.StopLossLevel - sets.EntryLevel) / _Point);
+            double price = NormalizeDouble(MathRound(iClose(NULL, PERIOD_M1, 1) / TickSize) * TickSize, _Digits);
+            ObjectSetDouble(ChartID(), ObjectPrefix + "EntryLine", OBJPROP_PRICE, price);
             ExtDialog.RefreshValues();
+
+            ExtDialog.OnClickBtnEntryDecrease();
+            ExtDialog.OnClickBtnEntryDecrease();
+            ExtDialog.OnClickBtnEntryDecrease();
+            ExtDialog.OnClickBtnEntryDecrease();
+            ExtDialog.OnClickBtnEntryDecrease();
+            ExtDialog.OnClickBtnEntryDecrease();
+            ExtDialog.OnClickBtnEntryDecrease();
+            ExtDialog.OnClickBtnEntryDecrease();
 
             // Trade();
 
-            ExtDialog.OnClickBtnOrderOnNextBar();
+            DoAutoTrading = "No";
         }
 
         if (sets.TradeDirection == Short && !isBuyBar)
         {
-            double price;
-            if (TickSize > 0) price = NormalizeDouble(MathRound(iClose(NULL, PERIOD_M1, 1) / TickSize) * TickSize, _Digits);
+            sets.EntryType = Instant;
+            ExtDialog.OnClickBtnOrderType();
+
+            double price = NormalizeDouble(MathRound(iClose(NULL, PERIOD_M1, 1) / TickSize) * TickSize, _Digits);
             ObjectSetDouble(ChartID(), ObjectPrefix + "EntryLine", OBJPROP_PRICE, price);
+            ExtDialog.RefreshValues();
+
+            ExtDialog.OnClickBtnEntryIncrease();
+            ExtDialog.OnClickBtnEntryIncrease();
+            ExtDialog.OnClickBtnEntryIncrease();
+            ExtDialog.OnClickBtnEntryIncrease();
+            ExtDialog.OnClickBtnEntryIncrease();
+            ExtDialog.OnClickBtnEntryIncrease();
+            ExtDialog.OnClickBtnEntryIncrease();
+            ExtDialog.OnClickBtnEntryIncrease();
 
             // Trade();
 
-            ExtDialog.OnClickBtnOrderOnNextBar();
+            DoAutoTrading = "No";
         }
     }
 }

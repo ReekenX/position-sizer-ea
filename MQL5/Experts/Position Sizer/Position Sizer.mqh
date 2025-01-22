@@ -98,6 +98,10 @@ public:
             void     MoveOutsideTradeButton();
             // Remember the panel's location to have the same location for minimized and maximized states.
             int      remember_top, remember_left;
+
+    void OnClickBtnEntryIncrease();
+    void OnClickBtnEntryDecrease();
+
 private:
 
     virtual void     ShowMain();
@@ -126,8 +130,6 @@ private:
 
     // Event handlers
     void OnEndEditEdtEntryLevel();
-    void OnClickBtnEntryIncrease();
-    void OnClickBtnEntryDecrease();
     void OnEndEditEdtSL();
     void OnClickBtnStopLossIncrease();
     void OnClickBtnStopLossDecrease();
@@ -3481,11 +3483,13 @@ void CPositionSizeCalculator::OnClickBtnStopPriceDecrease()
 
 void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
 {
-    IsOrderOnNextBar = !IsOrderOnNextBar;
+    if (DoAutoTrading == "No") DoAutoTrading = "Normal";
+    else if (DoAutoTrading == "Normal") DoAutoTrading = "Aggressive"; 
+    else if (DoAutoTrading == "Aggressive") DoAutoTrading = "No";
     
-    m_BtnOrderOnNextBar.Text(IsOrderOnNextBar ? "T" : " ");
+    m_BtnOrderOnNextBar.Text(DoAutoTrading == "No" ? "" : DoAutoTrading == "Aggressive" ? "A" : "N");
 
-    if (IsOrderOnNextBar) {
+    if (DoAutoTrading != "No") {
         CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
     }
 }
