@@ -618,14 +618,14 @@ void DoNormalAutoTrade()
         {
             Trade();
 
-            DoAutoTrading = "No";
+            ExtDialog.ClearOrderOnNextBarButtonLabel();
         }
 
         if (sets.TradeDirection == Short && !isBuyBar)
         {
             Trade();
 
-            DoAutoTrading = "No";
+            ExtDialog.ClearOrderOnNextBarButtonLabel();
         }
     }
 }
@@ -656,9 +656,7 @@ void DoAggressiveAutoTrade()
             ExtDialog.OnClickBtnEntryDecrease();
             ExtDialog.OnClickBtnEntryDecrease();
 
-            // Trade();
-
-            DoAutoTrading = "No";
+            ExtDialog.ClearOrderOnNextBarButtonLabel();
         }
 
         if (sets.TradeDirection == Short && !isBuyBar)
@@ -679,9 +677,7 @@ void DoAggressiveAutoTrade()
             ExtDialog.OnClickBtnEntryIncrease();
             ExtDialog.OnClickBtnEntryIncrease();
 
-            // Trade();
-
-            DoAutoTrading = "No";
+            ExtDialog.ClearOrderOnNextBarButtonLabel();
         }
     }
 }

@@ -84,6 +84,7 @@ public:
             void     OnClickBtnOrderType();
             void     OnClickBtnLines();
     virtual void     OnClickButtonClose();
+            void     ClearOrderOnNextBarButtonLabel();
 
             int      MaxTakeProfitsNumber;
     virtual void     UpdateAdditionalTradingPanelTP(int i);
@@ -3492,6 +3493,12 @@ void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
     if (DoAutoTrading != "No") {
         CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
     }
+}
+
+void CPositionSizeCalculator::ClearOrderOnNextBarButtonLabel()
+{
+    DoAutoTrading = "No";
+    m_BtnOrderOnNextBar.Text("");
 }
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
