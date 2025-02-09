@@ -95,7 +95,6 @@ public:
             void     OnClickEdtRiskMIn();
             void     OnClickAdditionalTPEdit(int);
             void     OnClickEdtTradingTPEdit1();
-            void     ClearOrderOnNextBarButtonLabel();
 
             int      MaxTakeProfitsNumber;
     virtual void     UpdateAdditionalTradingPanelTP(int i);
@@ -3551,21 +3550,13 @@ void CPositionSizeCalculator::OnClickBtnStopPriceDecrease()
 
 void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
 {
-    if (DoAutoTrading == "No") DoAutoTrading = "Normal";
-    else if (DoAutoTrading == "Normal") DoAutoTrading = "Aggressive"; 
-    else if (DoAutoTrading == "Aggressive") DoAutoTrading = "No";
-    
-    m_BtnOrderOnNextBar.Text(DoAutoTrading == "No" ? "" : DoAutoTrading == "Aggressive" ? "A" : "N");
+    DoAutoTrading = !DoAutoTrading;
 
-    if (DoAutoTrading != "No") {
+    m_BtnOrderOnNextBar.Text(DoAutoTrading ? "P" : " ");
+
+    if (DoAutoTrading) {
         CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
     }
-}
-
-void CPositionSizeCalculator::ClearOrderOnNextBarButtonLabel()
-{
-    DoAutoTrading = "No";
-    m_BtnOrderOnNextBar.Text("");
 }
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
