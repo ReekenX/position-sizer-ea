@@ -35,7 +35,7 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double TP_MultiplierVar = 1;
+double TP_MultiplierVar = 2;
 bool DoAutoTrading = false;
 datetime CurrentBarIndex = 0;
 
