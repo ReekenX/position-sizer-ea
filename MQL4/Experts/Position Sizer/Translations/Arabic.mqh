@@ -45,12 +45,6 @@
 #define TRANSLATION_TOOLTIP_TAKEPROFIT_DECREASE_MULTIPLE "تقليل أخذ الربح"
 #define TRANSLATION_TOOLTIP_TAKEPROFIT_BY_ONE_POINT "بـ 1 نقطة"
 
-// Stop price
-#define TRANSLATION_LABEL_STOPPRICE "سعر الإيقاف"
-
-#define TRANSLATION_TOOLTIP_STOPPRICE_INCREASE "زيادة سعر الإيقاف بـ 1 نقطة"
-#define TRANSLATION_TOOLTIP_STOPPRICE_DECREASE "تقليل سعر الإيقاف بـ 1 نقطة"
-
 // ATR options
 #define TRANSLATION_LABEL_ATR_PERIOD "فترة ATR"
 #define TRANSLATION_BUTTON_ATR_PERIOD_CURRENT "الحالية"
@@ -66,9 +60,8 @@
 #define TRANSLATION_LABEL_ORDER_TYPE "نوع الأمر"
 #define TRANSLATION_BUTTON_ORDER_TYPE_INSTANT "فوري"
 #define TRANSLATION_BUTTON_ORDER_TYPE_PENDING "معلق"
-#define TRANSLATION_BUTTON_ORDER_TYPE_STOPLIMIT "حد الإيقاف"
 
-#define TRANSLATION_TOOLTIP_ORDER_TYPE "التبديل بين الفوري والمعلق وحد الإيقاف"
+#define TRANSLATION_TOOLTIP_ORDER_TYPE "التبديل بين Instant وPending "
 
 // Hide/show lines
 #define TRANSLATION_BUTTON_HIDE_LINES "إخفاء الخطوط"
@@ -103,7 +96,6 @@
 #define TRANSLATION_TOOLTIP_INPUTS "الحقول في هذا العمود محسوبة بناءً على المدخلات"
 #define TRANSLATION_TOOLTIP_RESULT "الحقول في هذا العمود تأخذ في الاعتبار قيود الوسيط"
 
-
 // Risk tab
 #define TRANSLATION_CHECKBOX_COUNT_PENDING_ORDERS "عد الأوامر المعلقة"
 #define TRANSLATION_CHECKBOX_IGNORE_ORDERS_WO_SL "تجاهل الأوامر بدون إيقاف الخسارة"
@@ -136,11 +128,7 @@
 // Swaps tab
 #define TRANSLATION_LABEL_TYPE "النوع"
 #define TRANSLATION_LABEL_UNKNOWN "غير معروف"
-#define TRANSLATION_LABEL_DISABLED "مُعطل"
-#define TRANSLATION_LABEL_INTEREST_OPEN "الفائدة (مفتوح)"
-#define TRANSLATION_LABEL_INTEREST_CURRENT "الفائدة (حالي)"
-
-#define TRANSLATION_LABEL_REOPENING "إعادة الفتح"
+#define TRANSLATION_LABEL_INTEREST "الفائدة"
 #define TRANSLATION_LABEL_TRIPLE_SWAP "سواب ثلاثي"
 #define TRANSLATION_EDIT_WEEKDAY_SUNDAY "الأحد"
 #define TRANSLATION_EDIT_WEEKDAY_MONDAY "الاثنين"
@@ -157,7 +145,6 @@
 #define TRANSLATION_LABEL_PER_PS "لكل ح م"
 #define TRANSLATION_LABEL_BASE_CURRENCY "عملة الأساس"
 #define TRANSLATION_LABEL_MARGIN_CURRENCY "عملة الهامش"
-#define TRANSLATION_LABEL_PROFIT_CURRENCY "عملة الأرباح"
 
 
 // Trading tab
@@ -195,19 +182,18 @@
 #define TRANSLATION_CHECKBOX_ASK_FOR_CONFIRMATION "اطلب التأكيد"
 #define TRANSLATION_TOOLTIP_ASK_FOR_CONFIRMATION "سيطلب المستشار الخبير التأكيد قبل فتح الصفقة."
 #define TRANSLATION_LABEL_EXPIRY "الانتهاء"
-#define TRANSLATION_TOOLTIP_EXPIRY "وقت الانتهاء بالدقائق للأمر المعلق التالي الذي تم إنشائه. الحد الأدنى = 2."
+#define TRANSLATION_TOOLTIP_EXPIRY "وقت الانتهاء بالدقائق للأمر المعلق التالي الذي تم إنشائه. الحد الأدنى = 10."
 #define TRANSLATION_LABEL_MINUTES "الحد الأدنى."
 #define TRANSLATION_TOOLTIP_MINUTES "دقائق"
 
 
 // Chart objects
-#define TRANSLATION_TOOLTIP_STOP_PRICE_LINE "سعر الإيقاف (لأوامر حد الإيقا"
 #define TRANSLATION_TOOLTIP_SL_LABEL "مسافة إيقاف الخسارة، نقاط "
 #define TRANSLATION_TOOLTIP_TP_LABEL "مسافة أخذ الربح، نقاط"
 #define TRANSLATION_TOOLTIP_ENTRY_LABEL "مسافة الدخول، نقاط"
-#define TRANSLATION_TOOLTIP_STOP_PRICE_LABEL "مسافة سعر الإيقاف، نقاط"
 #define TRANSLATION_TOOLTIP_ENTRY_LABEL_ADDITIONAL "حجم المركز، لوت"
 #define TRANSLATION_TOOLTIP_OUTSIDE_TRADE_BUTTON "انقر لفتح أمر/مركز."
+#define TRANSLATION_CLOSE_BUTTON "إغلاق"
 
 
 // Warnings
@@ -232,7 +218,6 @@
 #define TRANSLATION_MESSAGE_FAILED_TO_DELETE_FILE "فشل في حذف الملف"
 #define TRANSLATION_MESSAGE_DELETED_SETTINGS " تم حذف ملف الإعدادات بنجاح."
 #define TRANSLATION_MESSAGE_DELETED_DUPLICATE_PANEL "حذف كائنات اللوحة ذات البادئة المُكررة"
-#define TRANSLATION_MESSAGE_FAILED_TO_CREATE_ATR "فشل في إنشاء مقبض ATR"
 #define TRANSLATION_MESSAGE_ENTRY_SL_DIFFERENT_NON_ZERO "يجب أن تكون مستويات الدخول وإيقاف الخسارة مختلفة وغير صفرية."
 #define TRANSLATION_MESSAGE_ENTRY_SL_DIFFERENT "يجب أن يكون سعر إيقاف الخسارة مختلفًا عن الدخول."
 #define TRANSLATION_MESSAGE_CANNOT_RETRIEVE_TICKSIZE "تعذر استعادة حجم المزايدة السعرية لـ"
@@ -244,7 +229,6 @@
 #define TRANSLATION_MESSAGE_WRONG_POSITION_SIZE_VALUE "قيمة حجم المركز خاطئة!"
 #define TRANSLATION_MESSAGE_MULTIPLE_TP_VOLUME_SHARE_SUM "مجموع حصة حجم مستويات TPs متعددة"
 #define TRANSLATION_MESSAGE_INCORRECT_VOLUME_SUM "مجموع حجم التداول لمستويات TPs المتعددة خاطئ – لا يفتح أي صفقات."
-#define TRANSLATION_MESSAGE_NETTING_MODE_DETECTED "تم اكتشاف وضع المقاصة. لن تعمل مستويات TPs المتعددة. يتعين وضع هدف واحد لأخذ الربح عند حجم تداول 100%."
 #define TRANSLATION_MESSAGE_NOT_TAKING_A_TRADE "لا يفتح صفقات"
 #define TRANSLATION_MESSAGE_NTAT_LINES "الخطوط مخفية، وتم تعيين اللوحة على وضع عدم التداول عندما تكون مخفية."
 #define TRANSLATION_MESSAGE_NTAT_SPREAD "السبريد الحالي"
@@ -265,9 +249,6 @@
 #define TRANSLATION_MESSAGE_INFINITE_PER_SYMBOL_POTENTIAL_RISK "المخاطرة اللانهائية المحتملة لكل رمز"
 #define TRANSLATION_MESSAGE_IGNORE_MARKET_EXECUTION_MODE_WARNING "، ولكن IgnoreMarketExecutionMode = true. قم بالتبديل إلى false إذا لم يتم تنفيذ الصفقة."
 #define TRANSLATION_MESSAGE_EXECUTION_MODE "وضع التنفيذ"
-#define TRANSLATION_MESSAGE_ORDER_FILLING_MODE "وضع تعبئة الأمر"
-#define TRANSLATION_MESSAGE_FILL_OR_KILL "التنفيذ أو الإلغاء"
-#define TRANSLATION_MESSAGE_IMMEDIATE_OR_CANCEL "فوري أو إلغاء"
 #define TRANSLATION_MESSAGE_FOUND_EXISTING_BUY_VOLUME "تم العثور على حجم الشراء الموجود"
 #define TRANSLATION_MESSAGE_FOUND_EXISTING_SELL_VOLUME "تم العثور على حجم البيع الموجود"
 #define TRANSLATION_MESSAGE_ADJUSTED_POSITION_SIZE "حجم المركز المُعدل"
@@ -285,45 +266,24 @@
 #define TRANSLATION_MESSAGE_ORDER "الأمر"
 #define TRANSLATION_MESSAGE_EXECUTED "مُنفذ"
 #define TRANSLATION_MESSAGE_ERROR_OPENING_POSITION "خطأ في فتح المركز"
-#define TRANSLATION_MESSAGE_RETURN_CODE "رمز الرجوع"
-#define TRANSLATION_MESSAGE_INITIAL_RETURN_CODE "رمز الرجوع الأولي"
-#define TRANSLATION_MESSAGE_ORDER_ID "مُعرّف الأمر"
-#define TRANSLATION_MESSAGE_DEAL_ID "مُعرّف الصفقة"
-#define TRANSLATION_MESSAGE_POSITION_ID "مُعرّف المركز"
-#define TRANSLATION_MESSAGE_ERROR_MODIFYING_POSITION "خطأ في تعديل المركز"
-#define TRANSLATION_MESSAGE_SL_TP_APPLIED "تم تطبيق إيقاف الخسارة/أخذ الربح بنجاح."
-#define TRANSLATION_MESSAGE_ERROR_SELECTING_DEAL "خطأ في اختيار الصفقة"
-#define TRANSLATION_MESSAGE_ERROR_SELECTING_DEAL_HISTORY "خطأ في اختيار سجل الصفقة"
-#define TRANSLATION_MESSAGE_WAITING "قيد الانتظار..."
-#define TRANSLATION_MESSAGE_ERROR_SELECTING_POSITIONS "خطأ في اختيار المراكز"
 #define TRANSLATION_MESSAGE_POSITION_SIZER_ON "مُحدد حجم المركز على"
 #define TRANSLATION_MESSAGE_EXECUTE_TRADE "هل تريد تنفيذ الصفقة؟"
 #define TRANSLATION_MESSAGE_BUY "شراء"
 #define TRANSLATION_MESSAGE_BUY_STOP "شراء موقوف"
 #define TRANSLATION_MESSAGE_BUY_LIMIT "شراء الحد"
-#define TRANSLATION_MESSAGE_BUY_STOP_LIMIT "شراء حد الإيقاف"
 #define TRANSLATION_MESSAGE_SELL "بيع"
 #define TRANSLATION_MESSAGE_SELL_STOP "بيع موقوف"
 #define TRANSLATION_MESSAGE_SELL_LIMIT "حد البيع"
-#define TRANSLATION_MESSAGE_SELL_STOP_LIMIT "بيع حد الإيقاف"
 #define TRANSLATION_MESSAGE_SIZE "الحجم"
 #define TRANSLATION_MESSAGE_MULTIPLE "متعدد"
 #define TRANSLATION_MESSAGE_TRADE_CANCELED "صفقة مُلغاة."
-#define TRANSLATION_MESSAGE_POSITIONGETTICKET_FAILED "فشل PositionGetTicket"
-#define TRANSLATION_MESSAGE_POSITIONMODIFY_FAILED_BUY_TSL "فشل PositionModify في الإيقاف المتحرك للشراء"
-#define TRANSLATION_MESSAGE_POSITIONMODIFY_FAILED_SELL_TSL "فشل PositionModify في الإيقاف المتحرك للبيع"
 #define TRANSLATION_MESSAGE_TSL_APPLIED "تم تطبيق الإيقاف المتحرك على المركز"
 #define TRANSLATION_MESSAGE_SL_WAS_MOVED_FROM "تم تحريك إيقاف الخسارة من"
 #define TRANSLATION_MESSAGE_SL_WAS_MOVED_TO "إلى"
-#define TRANSLATION_MESSAGE_POSITIONMODIFY_FAILED_BUY_BE "فشل PositionModify في نقطة تعادل الشراء" 
-#define TRANSLATION_MESSAGE_POSITIONMODIFY_FAILED_SELL_BE "فشل PositionModify في نقطة تعادل البيع" 
 #define TRANSLATION_MESSAGE_BE_APPLIED "تم تطبيق التعادل على المركز"
 #define TRANSLATION_MESSAGE_BE_FOR "نقطة التعادل لـ"
 #define TRANSLATION_MESSAGE_ERROR_SETTING_TIMER "خطأ في ضبط المؤقت"
 #define TRANSLATION_MESSAGE_FAILED_DELETE_INI "فشل في حذف ملف .ini للوحة حجم المركز"
-#define TRANSLATION_MESSAGE_CANNOT_CONVERT "يتعذر التحويل" 
-#define TRANSLATION_MESSAGE_CANNOT_CONVERT_TO "إلى" 
-#define TRANSLATION_MESSAGE_CANNOT_CONVERT_CALCULATION "الحسابات قد تكون خاطئة لـ" 
 #define TRANSLATION_MESSAGE_MINIMUM_EXPIRY "الحد الأدنى لفترة انتهاء الصلاحية هو دقيقتين."
 #define TRANSLATION_MESSAGE_DONOTAPPLLYSL_SET "تم تحديد مربع الاختيار ’عدم تطبيق إيقاف الخسارة‘. "
 #define TRANSLATION_MESSAGE_DONOTAPPLLYTP_SET "تم تحديد مربع الاختيار ’عدم تطبيق أخذ الربح‘."
@@ -333,3 +293,21 @@
 #define TRANSLATION_MESSAGE_CANNOT_TAKE_SMALLER_TRADE "لا يمكن تنفيذ صفقة أصغر."
 #define TRANSLATION_MESSAGE_ARE_YOU_SURE "هل أنت متأكد من أنك تريد إغلاق Position Sizer؟"
 #define TRANSLATION_MESSAGE_EXIT "الخروج؟"
+#define TRANSLATION_MESSAGE_COULDNT_DETECT "تعذر الكشف عن زوج العملات المناسب لحساب التعديل."
+#define TRANSLATION_MESSAGE_ACCOUNT_CURRENCY "عملة الحساب"
+#define TRANSLATION_MESSAGE_TRYING_TO_FIND "محاولة العثور على تركيبة من رمزين محتملين."
+#define TRANSLATION_MESSAGE_CONVERTING_VIA "التحويل عبر"
+#define TRANSLATION_MESSAGE_ADJUSTMENT_CALCULATION_CRITICAL_FAILURE "فشل حرج في حساب التعديل. فشلت طرق التحويل البسيطة والثنائية."
+#define TRANSLATION_MESSAGE_COULDNT_DETECT_PROPER_CURRENCY_PAIR "خطأ. تعذر الكشف عن زوج العملات المناسب لحساب التعديل باستخدام زوجين."
+#define TRANSLATION_MESSAGE_CROSS_CURRENCY "العملة التقاطعية"
+#define TRANSLATION_MESSAGE_CHARTS_PAIR_CURRENCY "عملة زوج الرسم البياني"
+#define TRANSLATION_MESSAGE_INFINITY "غير نهائي"
+#define TRANSLATION_MESSAGE_EXECUTION_FAILED "فشل التنفيذ."
+#define TRANSLATION_MESSAGE_FAILED_TO_FIND_ORDER "فشل العثور على الأمر لتطبيق SL/TP."
+#define TRANSLATION_MESSAGE_ERROR_MODIFYING_ORDER "خطأ في تعديل الأمر"
+#define TRANSLATION_MESSAGE_ORDERSELECT_FAILED "فشل OrderSelect"
+#define TRANSLATION_MESSAGE_FAILED_TO_SET_TRAILING_STOP_FOR_BUY "فشل في تعيين إيقاف الخسارة المتحرك لأمر شراء"
+#define TRANSLATION_MESSAGE_FAILED_TO_SET_TRAILING_STOP_FOR_SELL "فشل في تعيين إيقاف الخسارة المتحرك لأمر بيع"
+#define TRANSLATION_MESSAGE_ORDERDELETE_FAILED "فشل OrderDelete"
+#define TRANSLATION_MESSAGE_ORDERCLOSE_FAILED "فشل OrderClose"
+#define TRANSLATION_MESSAGE_OBJECT_NOT_FOUND "تعذر العثور على الكائن."
