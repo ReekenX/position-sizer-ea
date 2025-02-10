@@ -620,16 +620,16 @@ void DoAutoTrade()
 
         if (sets.TradeDirection == Long && isBuyBar)
         {
-            Trade();
-
             DoAutoTrading = false;
+
+            Trade();
         }
 
         if (sets.TradeDirection == Short && !isBuyBar)
         {
-            Trade();
-
             DoAutoTrading = false;
+
+            Trade();
         }
     }
 }
