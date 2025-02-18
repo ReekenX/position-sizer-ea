@@ -38,6 +38,7 @@ string PanelCaptionBase = "";
 double TP_MultiplierVar = 2;
 bool DoAutoTrading = false;
 datetime CurrentBarIndex = 0;
+input double AutoCloseAtEquity = 5420;
 
 input group "Compactness"
 input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?
@@ -608,6 +609,8 @@ void OnTick()
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 
     if (DoAutoTrading) DoAutoTrade();
+
+    if (AccountInfoDouble(ACCOUNT_EQUITY) >= AutoCloseAtEquity) CloseAll(); 
 }
 
 void DoAutoTrade()
@@ -634,6 +637,19 @@ void DoAutoTrade()
             Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+        }
+    }
+}
+
+void CloseAll()
+{
+    CTrade m_trade;
+    for(int i=PositionsTotal()-1;i>=0; i--)
+    {
+        PositionSelect(PositionGetSymbol(i));
+        while(false==m_trade.PositionClose(PositionGetInteger(POSITION_TICKET),3))
+        {
+            m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
         }
     }
 }
