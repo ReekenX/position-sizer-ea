@@ -623,6 +623,8 @@ void DoAutoTrade()
             DoAutoTrading = false;
 
             Trade();
+
+            ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
 
         if (sets.TradeDirection == Short && !isBuyBar)
@@ -630,6 +632,8 @@ void DoAutoTrade()
             DoAutoTrading = false;
 
             Trade();
+
+            ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
     }
 }
