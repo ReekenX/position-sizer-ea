@@ -643,15 +643,13 @@ void DoAutoTrade()
 
 void CloseAll()
 {
+    int total = PositionsTotal();
+    if (total == 0) return;
+
+    PositionSelect(PositionGetSymbol(0));
+
     CTrade m_trade;
-    for(int i=PositionsTotal()-1;i>=0; i--)
-    {
-        PositionSelect(PositionGetSymbol(i));
-        while(false==m_trade.PositionClose(PositionGetInteger(POSITION_TICKET),3))
-        {
-            m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
-        }
-    }
+    m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
 }
 
 void OnChartEvent(const int id,
