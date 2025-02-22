@@ -35,7 +35,7 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double TP_MultiplierVar = 2;
+double TP_MultiplierVar = 3;
 bool DoAutoTrading = false;
 datetime CurrentBarIndex = 0;
 input double AutoCloseAtEquity = 5420;
