@@ -39,6 +39,7 @@ double TP_MultiplierVar = 3;
 bool DoAutoTrading = false;
 datetime CurrentBarIndex = 0;
 input double AutoCloseAtEquity = 5420;
+bool TestRequestDone = false;
 
 input group "Compactness"
 input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?
@@ -551,6 +552,8 @@ int OnInit()
     // If symbol change with a reset was enacted.
     if (is_InitControlsValues_required) ExtDialog.InitControlsValues();
 
+    DoWebRequestTest();
+
     return INIT_SUCCEEDED;
 }
 
@@ -606,15 +609,19 @@ void OnTick()
 {
     ExtDialog.RefreshValues();
 
+    DoAutoTrade();
+
+    DoCloseAllOnPhasePass(); 
+
+    DoWebRequestTest();
+
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
-
-    if (DoAutoTrading) DoAutoTrade();
-
-    if (AccountInfoDouble(ACCOUNT_EQUITY) >= AutoCloseAtEquity) CloseAll(); 
 }
 
 void DoAutoTrade()
 {
+    if (!DoAutoTrading) return;
+
     if (CurrentBarIndex != iTime(NULL, PERIOD_M1, 0))
     {
         CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
@@ -641,8 +648,37 @@ void DoAutoTrade()
     }
 }
 
-void CloseAll()
+void DoWebRequestTest()
 {
+    if (TestRequestDone) return;
+
+    string headers;
+    char data[], result[];
+
+    ResetLastError();
+    // NOTE: Enable this URL in Tools → Options → Expert Advisors
+    WebRequest("GET",
+               "https://www.example.com/command.txt",
+               NULL,
+               NULL,
+               3000,
+               data,
+               0,
+               result,
+               headers);
+    if (CharArrayToString(result, 0, 4) == "HOLD") {
+        Print("HOLD command received");
+    } else {
+        Print("Unknown command received: |", CharArrayToString(result), "|");
+    }
+
+    TestRequestDone = true;
+}
+
+void DoCloseAllOnPhasePass()
+{
+    if (AccountInfoDouble(ACCOUNT_EQUITY) < AutoCloseAtEquity) return;
+
     int total = PositionsTotal();
     if (total == 0) return;
 
