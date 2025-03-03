@@ -38,8 +38,10 @@ string PanelCaptionBase = "";
 double TP_MultiplierVar = 3;
 bool DoAutoTrading = false;
 datetime CurrentBarIndex = 0;
-input double AutoCloseAtEquity = 5420;
-bool TestRequestDone = false;
+input double AutoCloseAtEquity = 5420; // Close all positions if this equity reached
+input bool EnableWebCommands = false; // Enable web commands?
+input string WebCommandDomain = "https://www.example.org"; // URL to the web command domain
+bool WebRequestInProgress = false;
 
 input group "Compactness"
 input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?
@@ -552,8 +554,6 @@ int OnInit()
     // If symbol change with a reset was enacted.
     if (is_InitControlsValues_required) ExtDialog.InitControlsValues();
 
-    DoWebRequestTest();
-
     return INIT_SUCCEEDED;
 }
 
@@ -613,7 +613,7 @@ void OnTick()
 
     DoCloseAllOnPhasePass(); 
 
-    DoWebRequestTest();
+    CheckWebCommands();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
@@ -648,31 +648,54 @@ void DoAutoTrade()
     }
 }
 
-void DoWebRequestTest()
+void CheckWebCommands()
 {
-    if (TestRequestDone) return;
+   if (!EnableWebCommands) return;
+   if (WebRequestInProgress) return;
+   WebRequestInProgress = true;
+
+   datetime currentTime = TimeCurrent();
+   MqlDateTime timeStruct;
+   TimeToStruct(currentTime, timeStruct);
+   int currentHour = timeStruct.hour;
+   int currentSecond = timeStruct.sec;
+
+   if (currentSecond % 10 != 0 || currentHour < 10 || currentHour > 19 || WebCommandDomain == "https://www.example.org") {
+     WebRequestInProgress = false;
+     return;
+   }
 
     string headers;
     char data[], result[];
 
     ResetLastError();
     // NOTE: Enable this URL in Tools → Options → Expert Advisors
-    WebRequest("GET",
-               "https://www.example.com/command.txt",
-               NULL,
-               NULL,
-               3000,
-               data,
-               0,
-               result,
-               headers);
+    WebRequest("GET", WebCommandDomain + "/get", NULL, NULL, 3000, data, 0, result, headers);
     if (CharArrayToString(result, 0, 4) == "HOLD") {
         Print("HOLD command received");
+    } else if (CharArrayToString(result, 0, 3) == "BUY") {
+        sets.TradeDirection = Long;
+        sets.EntryType = Instant;
+        ExtDialog.OnClickBtnOrderType();
+
+        // NOTE: Enable this URL in Tools → Options → Expert Advisors
+        WebRequest("GET", WebCommandDomain + "/ack", NULL, NULL, 3000, data, 0, result, headers);
+
+        Print("BUY command received");
+    } else if (CharArrayToString(result, 0, 4) == "SELL") {
+        sets.TradeDirection = Short;
+        sets.EntryType = Instant;
+        ExtDialog.OnClickBtnOrderType();
+
+        // NOTE: Enable this URL in Tools → Options → Expert Advisors
+        WebRequest("GET", WebCommandDomain + "/ack", NULL, NULL, 3000, data, 0, result, headers);
+
+        Print("SELL command received");
     } else {
-        Print("Unknown command received: |", CharArrayToString(result), "|");
+        Print("Unknown command received: ", CharArrayToString(result));
     }
 
-    TestRequestDone = true;
+    WebRequestInProgress = false;
 }
 
 void DoCloseAllOnPhasePass()
