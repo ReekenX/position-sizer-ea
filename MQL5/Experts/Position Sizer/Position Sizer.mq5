@@ -672,7 +672,11 @@ void DoFetchWebCommands()
 
     // NOTE: Enable this URL in Tools → Options → Expert Advisors
     WebRequest("GET", WebCommandDomain + "/get", NULL, NULL, 3000, data, 0, result, headers);
+
     if (CharArrayToString(result, 0, 4) == "HOLD") {
+        DoAutoTrading = false;
+        ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+
         Print("HOLD command received");
     } else if (CharArrayToString(result, 0, 3) == "BUY") {
         DoAutoTrading = false;
