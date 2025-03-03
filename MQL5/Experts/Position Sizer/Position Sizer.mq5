@@ -611,9 +611,9 @@ void OnTick()
 
     DoAutoTrade();
 
-    DoCloseAllOnPhasePass(); 
+    DoCloseAllOnEquityReach(); 
 
-    CheckWebCommands();
+    DoFetchWebCommands();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
@@ -648,32 +648,36 @@ void DoAutoTrade()
     }
 }
 
-void CheckWebCommands()
+void DoFetchWebCommands()
 {
-   if (!EnableWebCommands) return;
-   if (WebRequestInProgress) return;
-   WebRequestInProgress = true;
+    if (!EnableWebCommands) return;
+    if (WebRequestInProgress) return;
+    WebRequestInProgress = true;
 
-   datetime currentTime = TimeCurrent();
-   MqlDateTime timeStruct;
-   TimeToStruct(currentTime, timeStruct);
-   int currentHour = timeStruct.hour;
-   int currentSecond = timeStruct.sec;
+    datetime currentTime = TimeCurrent();
+    MqlDateTime timeStruct;
+    TimeToStruct(currentTime, timeStruct);
+    int currentHour = timeStruct.hour;
+    int currentSecond = timeStruct.sec;
 
-   if (currentSecond % 10 != 0 || currentHour < 10 || currentHour > 19 || WebCommandDomain == "https://www.example.org") {
-     WebRequestInProgress = false;
-     return;
-   }
+    if (currentSecond % 10 != 0 || currentHour < 10 || currentHour > 19 || WebCommandDomain == "https://www.example.org") {
+        WebRequestInProgress = false;
+        return;
+    }
 
     string headers;
     char data[], result[];
 
     ResetLastError();
+
     // NOTE: Enable this URL in Tools → Options → Expert Advisors
     WebRequest("GET", WebCommandDomain + "/get", NULL, NULL, 3000, data, 0, result, headers);
     if (CharArrayToString(result, 0, 4) == "HOLD") {
         Print("HOLD command received");
     } else if (CharArrayToString(result, 0, 3) == "BUY") {
+        DoAutoTrading = false;
+        ExtDialog.OnClickBtnOrderOnNextBar();
+
         sets.TradeDirection = Long;
         sets.EntryType = Instant;
         ExtDialog.OnClickBtnOrderType();
@@ -683,6 +687,9 @@ void CheckWebCommands()
 
         Print("BUY command received");
     } else if (CharArrayToString(result, 0, 4) == "SELL") {
+        DoAutoTrading = false;
+        ExtDialog.OnClickBtnOrderOnNextBar();
+
         sets.TradeDirection = Short;
         sets.EntryType = Instant;
         ExtDialog.OnClickBtnOrderType();
@@ -698,7 +705,7 @@ void CheckWebCommands()
     WebRequestInProgress = false;
 }
 
-void DoCloseAllOnPhasePass()
+void DoCloseAllOnEquityReach()
 {
     if (AccountInfoDouble(ACCOUNT_EQUITY) < AutoCloseAtEquity) return;
 
