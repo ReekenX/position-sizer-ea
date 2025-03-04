@@ -632,7 +632,8 @@ void DoAutoTrade()
         {
             DoAutoTrading = false;
 
-            Trade();
+            Print("Trading code is disabled for debugging reasons");
+            // Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
@@ -641,7 +642,8 @@ void DoAutoTrade()
         {
             DoAutoTrading = false;
 
-            Trade();
+            Print("Trading code is disabled for debugging reasons");
+            // Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
@@ -673,21 +675,21 @@ void DoFetchWebCommands()
     // NOTE: Enable this URL in Tools → Options → Expert Advisors
     WebRequest("GET", WebCommandDomain + "/get", NULL, NULL, 3000, data, 0, result, headers);
 
-    if (CharArrayToString(result, 0, 4) == "HOLD") {
+    if (CharArrayToString(result, 0, 5) == "RESET") {
         DoAutoTrading = false;
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-        Print("HOLD command received");
+        Print("RESET command received");
     } else if (CharArrayToString(result, 0, 3) == "BUY") {
         DoAutoTrading = false;
         ExtDialog.OnClickBtnOrderOnNextBar();
 
         sets.TradeDirection = Long;
-        sets.EntryType = Instant;
-        ExtDialog.OnClickBtnOrderType();
+        sets.EntryType = StopLimit;
+        ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
 
         // NOTE: Enable this URL in Tools → Options → Expert Advisors
-        WebRequest("GET", WebCommandDomain + "/ack", NULL, NULL, 3000, data, 0, result, headers);
+        WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
         Print("BUY command received");
     } else if (CharArrayToString(result, 0, 4) == "SELL") {
@@ -695,13 +697,15 @@ void DoFetchWebCommands()
         ExtDialog.OnClickBtnOrderOnNextBar();
 
         sets.TradeDirection = Short;
-        sets.EntryType = Instant;
-        ExtDialog.OnClickBtnOrderType();
+        sets.EntryType = StopLimit;
+        ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
 
         // NOTE: Enable this URL in Tools → Options → Expert Advisors
-        WebRequest("GET", WebCommandDomain + "/ack", NULL, NULL, 3000, data, 0, result, headers);
+        WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
         Print("SELL command received");
+    } else if (CharArrayToString(result, 0, 4) == "HOLD") {
+        Print("HOLD command received");
     } else {
         Print("Unknown command received: ", CharArrayToString(result));
     }
