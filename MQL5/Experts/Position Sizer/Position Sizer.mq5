@@ -632,8 +632,7 @@ void DoAutoTrade()
         {
             DoAutoTrading = false;
 
-            Print("Trading code is disabled for debugging reasons");
-            // Trade();
+            Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
@@ -642,8 +641,7 @@ void DoAutoTrade()
         {
             DoAutoTrading = false;
 
-            Print("Trading code is disabled for debugging reasons");
-            // Trade();
+            Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
