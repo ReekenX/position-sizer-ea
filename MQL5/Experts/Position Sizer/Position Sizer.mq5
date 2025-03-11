@@ -681,24 +681,24 @@ void DoFetchWebCommands()
 
         Print("RESET command received");
     } else if (CharArrayToString(result, 0, 3) == "BUY") {
-        DoAutoTrading = false;
-        ExtDialog.OnClickBtnOrderOnNextBar();
-
         sets.TradeDirection = Long;
         sets.EntryType = StopLimit;
         ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
+
+        DoAutoTrading = false;
+        ExtDialog.OnClickBtnOrderOnNextBar();
 
         // NOTE: Enable this URL in Tools → Options → Expert Advisors
         WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
         Print("BUY command received");
     } else if (CharArrayToString(result, 0, 4) == "SELL") {
-        DoAutoTrading = false;
-        ExtDialog.OnClickBtnOrderOnNextBar();
-
         sets.TradeDirection = Short;
         sets.EntryType = StopLimit;
         ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
+
+        DoAutoTrading = false;
+        ExtDialog.OnClickBtnOrderOnNextBar();
 
         // NOTE: Enable this URL in Tools → Options → Expert Advisors
         WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
