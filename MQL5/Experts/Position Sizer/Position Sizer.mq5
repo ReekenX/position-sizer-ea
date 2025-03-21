@@ -35,10 +35,10 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double TP_MultiplierVar = 3;
+double TP_MultiplierVar = 5;
 bool DoAutoTrading = false;
 datetime CurrentBarIndex = 0;
-input double AutoCloseAtEquity = 5420; // Close all positions if this equity reached
+input double AutoCloseAtEquity = 5000; // Close all positions if this equity reached
 input bool EnableWebCommands = false; // Enable web commands?
 input string WebCommandDomain = "https://www.example.org"; // URL to the web command domain
 bool WebRequestInProgress = false;
@@ -713,7 +713,7 @@ void DoFetchWebCommands()
 
 void DoCloseAllOnEquityReach()
 {
-    if (AccountInfoDouble(ACCOUNT_EQUITY) < AutoCloseAtEquity) return;
+    if (AccountInfoDouble(ACCOUNT_EQUITY) < AutoCloseAtEquity * 1.005) return;
 
     int total = PositionsTotal();
     if (total == 0) return;
