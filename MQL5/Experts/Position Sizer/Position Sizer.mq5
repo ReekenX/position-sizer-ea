@@ -713,7 +713,7 @@ void DoFetchWebCommands()
 
 void DoCloseAllOnEquityReach()
 {
-    if (AccountInfoDouble(ACCOUNT_EQUITY) < AutoCloseAtEquity * 1.005) return;
+    if (AccountInfoDouble(ACCOUNT_EQUITY) < AutoCloseAtEquity * 1.004) return;
 
     int total = PositionsTotal();
     if (total == 0) return;
