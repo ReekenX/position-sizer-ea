@@ -114,6 +114,8 @@ public:
 
     void OnClickBtnEntryIncrease();
     void OnClickBtnEntryDecrease();
+    void OnClickBtnStopLossIncrease();
+    void OnClickBtnStopLossDecrease();
 
 private:
 
@@ -143,8 +145,6 @@ private:
     // Event handlers
     void OnEndEditEdtEntryLevel();
     void OnEndEditEdtSL();
-    void OnClickBtnStopLossIncrease();
-    void OnClickBtnStopLossDecrease();
     void OnEndEditEdtTP();
     void OnClickBtnTakeProfitIncrease();
     void OnClickBtnTakeProfitDecrease();

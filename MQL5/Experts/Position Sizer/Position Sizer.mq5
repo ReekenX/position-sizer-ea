@@ -35,7 +35,7 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double TP_MultiplierVar = 0;
+double TP_MultiplierVar = 1;
 string AutoTradeMode = "NONE";
 datetime CurrentBarIndex = 0;
 input double AutoCloseAtEquity = 5000; // Close all positions if this equity reached
@@ -632,6 +632,21 @@ void DoAutoTrade()
         {
             AutoTradeMode = "NONE";
 
+            for (int i = 0; i < 10; i++) {
+                ExtDialog.OnClickBtnEntryDecrease();
+            }
+
+            for (int i = 0; i < 10; i++) {
+                ExtDialog.OnClickBtnStopLossIncrease();
+            }
+
+            // TODO: It would be nice to show where TP must be to reach AutoCloseAtEquity
+            // for (int i = 0; i < 10; i++) {
+            //     TP_MultiplierVar = 1;
+            //     ExtDialog.OnClickBtnTakeProfitsNumberAdd();
+            //     ExtDialog.RefreshValues();
+            // }
+
             Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
@@ -640,6 +655,21 @@ void DoAutoTrade()
         if (AutoTradeMode == "SELL" && sets.TradeDirection == Short && !isBuyBar)
         {
             AutoTradeMode = "NONE";
+
+            for (int i = 0; i < 10; i++) {
+                ExtDialog.OnClickBtnEntryIncrease();
+            }
+
+            for (int i = 0; i < 10; i++) {
+                ExtDialog.OnClickBtnStopLossDecrease();
+            }
+
+            // TODO: It would be nice to show where TP must be to reach AutoCloseAtEquity
+            // for (int i = 0; i < 10; i++) {
+            //     TP_MultiplierVar = 1;
+            //     ExtDialog.OnClickBtnTakeProfitsNumberAdd();
+            //     ExtDialog.RefreshValues();
+            // }
 
             Trade();
 
