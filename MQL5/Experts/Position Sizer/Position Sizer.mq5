@@ -615,6 +615,8 @@ void OnTick()
 
     DoFetchWebCommands();
 
+    DoAutoCorrectTp();
+
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
 
@@ -642,13 +644,6 @@ void DoAutoTrade()
                 ExtDialog.OnClickBtnStopLossIncrease();
             }
 
-            // TODO: It would be nice to show where TP must be to reach AutoCloseAtEquity
-            // for (int i = 0; i < 10; i++) {
-            //     TP_MultiplierVar = 1;
-            //     ExtDialog.OnClickBtnTakeProfitsNumberAdd();
-            //     ExtDialog.RefreshValues();
-            // }
-
             Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
@@ -668,16 +663,26 @@ void DoAutoTrade()
                 ExtDialog.OnClickBtnStopLossDecrease();
             }
 
-            // TODO: It would be nice to show where TP must be to reach AutoCloseAtEquity
-            // for (int i = 0; i < 10; i++) {
-            //     TP_MultiplierVar = 1;
-            //     ExtDialog.OnClickBtnTakeProfitsNumberAdd();
-            //     ExtDialog.RefreshValues();
-            // }
-
             Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+        }
+    }
+}
+
+void DoAutoCorrectTp()
+{
+    if (AutoCloseAtEquity < sets.TpLinePrice) {
+        return;
+    }
+
+    TP_MultiplierVar = 0;
+    for (int i = 0; i < 10; i++) {
+        ExtDialog.OnClickBtnTakeProfitsNumberAdd();
+        ExtDialog.RefreshValues();
+
+        if (AutoCloseAtEquity < sets.TpLinePrice) {
+            break;
         }
     }
 }

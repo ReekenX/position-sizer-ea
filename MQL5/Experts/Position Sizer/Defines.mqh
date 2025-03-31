@@ -206,6 +206,7 @@ struct Settings
     VOLUME_SHARE_MODE ShareVolumeMode;
     bool TemplateChanged;
     ADDITIONAL_TP_SCHEME LastAdditionalTPScheme;
+    double TpLinePrice;
 } sets;
 
 // An object class for a list of panel objects with their names for fields located on a given tab of the panel. There will be one list per tab.
