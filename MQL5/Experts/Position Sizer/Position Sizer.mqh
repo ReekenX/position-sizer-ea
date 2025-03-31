@@ -3551,13 +3551,21 @@ void CPositionSizeCalculator::OnClickBtnStopPriceDecrease()
 
 void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
 {
-    DoAutoTrading = !DoAutoTrading;
-
-    m_BtnOrderOnNextBar.Text(DoAutoTrading ? "P" : " ");
-
-    if (DoAutoTrading) {
-        CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+    if (AutoTradeMode != "NONE") {
+        AutoTradeMode = "NONE";
+        m_BtnOrderOnNextBar.Text(" ");
+        return;
     }
+
+    if (sets.TradeDirection == Long) {
+        AutoTradeMode = "BUY";
+    } else {
+        AutoTradeMode = "SELL";
+    }
+
+    m_BtnOrderOnNextBar.Text(AutoTradeMode == "BUY" ? "B" : "S");
+
+    CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
 }
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()

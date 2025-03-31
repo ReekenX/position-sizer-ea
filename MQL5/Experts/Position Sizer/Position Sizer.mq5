@@ -35,8 +35,8 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double TP_MultiplierVar = 5;
-bool DoAutoTrading = false;
+double TP_MultiplierVar = 0;
+string AutoTradeMode = "NONE";
 datetime CurrentBarIndex = 0;
 input double AutoCloseAtEquity = 5000; // Close all positions if this equity reached
 input bool EnableWebCommands = false; // Enable web commands?
@@ -620,7 +620,7 @@ void OnTick()
 
 void DoAutoTrade()
 {
-    if (!DoAutoTrading) return;
+    if (AutoTradeMode == "NONE") return;
 
     if (CurrentBarIndex != iTime(NULL, PERIOD_M1, 0))
     {
@@ -628,18 +628,18 @@ void DoAutoTrade()
 
         bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
 
-        if (sets.TradeDirection == Long && isBuyBar)
+        if (AutoTradeMode == "BUY" && sets.TradeDirection == Long && isBuyBar)
         {
-            DoAutoTrading = false;
+            AutoTradeMode = "NONE";
 
             Trade();
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
 
-        if (sets.TradeDirection == Short && !isBuyBar)
+        if (AutoTradeMode == "SELL" && sets.TradeDirection == Short && !isBuyBar)
         {
-            DoAutoTrading = false;
+            AutoTradeMode = "NONE";
 
             Trade();
 
@@ -674,7 +674,7 @@ void DoFetchWebCommands()
     WebRequest("GET", WebCommandDomain + "/get", NULL, NULL, 3000, data, 0, result, headers);
 
     if (CharArrayToString(result, 0, 5) == "RESET") {
-        DoAutoTrading = false;
+        AutoTradeMode = "NONE";
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
         WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
@@ -685,7 +685,7 @@ void DoFetchWebCommands()
         sets.EntryType = StopLimit;
         ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
 
-        DoAutoTrading = false;
+        AutoTradeMode = "NONE";
         ExtDialog.OnClickBtnOrderOnNextBar();
 
         WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
@@ -696,7 +696,8 @@ void DoFetchWebCommands()
         sets.EntryType = StopLimit;
         ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
 
-        DoAutoTrading = false;
+        AutoTradeMode = "NONE";
+
         ExtDialog.OnClickBtnOrderOnNextBar();
 
         WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
