@@ -632,6 +632,8 @@ void DoAutoTrade()
         {
             AutoTradeMode = "NONE";
 
+            sets.EntryType = Pending;
+
             for (int i = 0; i < 10; i++) {
                 ExtDialog.OnClickBtnEntryDecrease();
             }
@@ -655,6 +657,8 @@ void DoAutoTrade()
         if (AutoTradeMode == "SELL" && sets.TradeDirection == Short && !isBuyBar)
         {
             AutoTradeMode = "NONE";
+
+            sets.EntryType = StopLimit;
 
             for (int i = 0; i < 10; i++) {
                 ExtDialog.OnClickBtnEntryIncrease();
