@@ -611,8 +611,6 @@ void OnTick()
 
     DoAutoTrade();
 
-    DoCloseAllOnEquityReach(); 
-
     DoFetchWebCommands();
 
     DoAutoCorrectTp();
@@ -749,19 +747,6 @@ void DoFetchWebCommands()
     }
 
     WebRequestInProgress = false;
-}
-
-void DoCloseAllOnEquityReach()
-{
-    if (AccountInfoDouble(ACCOUNT_EQUITY) < AutoCloseAtEquity * 1.004) return;
-
-    int total = PositionsTotal();
-    if (total == 0) return;
-
-    PositionSelect(PositionGetSymbol(0));
-
-    CTrade m_trade;
-    m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
 }
 
 void OnChartEvent(const int id,
