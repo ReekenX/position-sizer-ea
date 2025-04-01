@@ -632,12 +632,13 @@ void DoAutoTrade()
         {
             AutoTradeMode = "NONE";
 
-            sets.EntryType = Pending;
+            // Aggressive strategy, commented out for now
+            // sets.EntryType = Pending;
+            // for (int i = 0; i < 10; i++) {
+            //     ExtDialog.OnClickBtnEntryDecrease();
+            // }
 
-            for (int i = 0; i < 10; i++) {
-                ExtDialog.OnClickBtnEntryDecrease();
-            }
-
+            // Reduce SL by 1 pip
             for (int i = 0; i < 10; i++) {
                 ExtDialog.OnClickBtnStopLossIncrease();
             }
@@ -651,12 +652,13 @@ void DoAutoTrade()
         {
             AutoTradeMode = "NONE";
 
-            sets.EntryType = StopLimit;
+            // Aggressive strategy, commented out for now
+            // sets.EntryType = StopLimit;
+            // for (int i = 0; i < 10; i++) {
+            //     ExtDialog.OnClickBtnEntryIncrease();
+            // }
 
-            for (int i = 0; i < 10; i++) {
-                ExtDialog.OnClickBtnEntryIncrease();
-            }
-
+            // Reduce SL by 1 pip
             for (int i = 0; i < 10; i++) {
                 ExtDialog.OnClickBtnStopLossDecrease();
             }
