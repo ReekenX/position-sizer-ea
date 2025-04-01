@@ -668,9 +668,9 @@ void DoAutoTrade()
     }
 }
 
-void DoAutoCorrectTp()
+void DoAutoCorrectTp(bool force = false)
 {
-    if (AutoCloseAtEquity < sets.TpLinePrice) {
+    if (!force && AutoCloseAtEquity < sets.TpLinePrice) {
         return;
     }
 

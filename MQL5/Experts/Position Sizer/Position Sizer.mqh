@@ -4407,6 +4407,8 @@ void CPositionSizeCalculator::OnEndEditEdtRiskMIn()
         CalculateRiskAndPositionSize();
         DisplayValues();
     }
+
+    DoAutoCorrectTp(true);
 }
 
 void CPositionSizeCalculator::OnEndEditEdtPosSize()
