@@ -39,7 +39,7 @@ double TP_MultiplierVar = 1;
 string AutoTradeMode = "NONE";
 datetime CurrentBarIndex = 0;
 input double AutoCloseAtEquity = 5000; // Close all positions if this equity reached
-input bool EnableWebCommands = false; // Enable web commands?
+input bool EnableWebTrade = false; // Enable trade from web command?
 input string WebCommandDomain = "https://www.example.org"; // URL to the web command domain
 bool WebRequestInProgress = false;
 
@@ -632,6 +632,9 @@ void DoAutoTrade()
         {
             AutoTradeMode = "NONE";
 
+            // sets.EntryLevel
+            // sets.StopLossLevel
+
             // Aggressive strategy, commented out for now
             // sets.EntryType = Pending;
             // for (int i = 0; i < 10; i++) {
@@ -639,11 +642,13 @@ void DoAutoTrade()
             // }
 
             // Reduce SL by 1 pip
-            for (int i = 0; i < 10; i++) {
-                ExtDialog.OnClickBtnStopLossIncrease();
-            }
+            // for (int i = 0; i < 10; i++) {
+            //     ExtDialog.OnClickBtnStopLossIncrease();
+            // }
 
-            Trade();
+            if (EnableWebTrade) {
+                Trade();
+            }
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
@@ -653,17 +658,19 @@ void DoAutoTrade()
             AutoTradeMode = "NONE";
 
             // Aggressive strategy, commented out for now
-            // sets.EntryType = StopLimit;
-            // for (int i = 0; i < 10; i++) {
-            //     ExtDialog.OnClickBtnEntryIncrease();
-            // }
-
-            // Reduce SL by 1 pip
+            sets.EntryType = StopLimit;
             for (int i = 0; i < 10; i++) {
-                ExtDialog.OnClickBtnStopLossDecrease();
+                ExtDialog.OnClickBtnEntryIncrease();
             }
 
-            Trade();
+            // Reduce SL by 1 pip
+            // for (int i = 0; i < 10; i++) {
+            //     ExtDialog.OnClickBtnStopLossDecrease();
+            // }
+
+            if (EnableWebTrade) {
+                Trade();
+            }
 
             ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
@@ -689,7 +696,6 @@ void DoAutoCorrectTp(bool force = false)
 
 void DoFetchWebCommands()
 {
-    if (!EnableWebCommands) return;
     if (WebRequestInProgress) return;
     WebRequestInProgress = true;
 

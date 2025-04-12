@@ -3560,11 +3560,11 @@ void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
 
     if (sets.TradeDirection == Long) {
         AutoTradeMode = "BUY";
+        m_BtnOrderOnNextBar.Text("B");
     } else {
         AutoTradeMode = "SELL";
+        m_BtnOrderOnNextBar.Text("S");
     }
-
-    m_BtnOrderOnNextBar.Text(AutoTradeMode == "BUY" ? "B" : "S");
 
     CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
 }
