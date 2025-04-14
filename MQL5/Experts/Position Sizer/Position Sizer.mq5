@@ -622,58 +622,58 @@ void DoAutoTrade()
 {
     if (AutoTradeMode == "NONE") return;
 
-    if (CurrentBarIndex != iTime(NULL, PERIOD_M1, 0))
+    if (CurrentBarIndex == iTime(NULL, PERIOD_M1, 0)) {
+        return;
+    }
+
+    CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+
+    bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
+
+    if (AutoTradeMode == "BUY" && sets.TradeDirection == Long && isBuyBar)
     {
-        CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+        AutoTradeMode = "NONE";
 
-        bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
+        double previousClosePrice = iClose(NULL, PERIOD_M1, 1);
+        double fullPriceRange = previousClosePrice - sets.StopLossLevel;
+        double discountedPrice = previousClosePrice - (fullPriceRange * 0.2);
 
-        if (AutoTradeMode == "BUY" && sets.TradeDirection == Long && isBuyBar)
-        {
-            AutoTradeMode = "NONE";
-
-            // sets.EntryLevel
-            // sets.StopLossLevel
-
-            // Aggressive strategy, commented out for now
-            // sets.EntryType = Pending;
-            // for (int i = 0; i < 10; i++) {
-            //     ExtDialog.OnClickBtnEntryDecrease();
-            // }
-
-            // Reduce SL by 1 pip
-            // for (int i = 0; i < 10; i++) {
-            //     ExtDialog.OnClickBtnStopLossIncrease();
-            // }
-
-            if (EnableWebTrade) {
-                Trade();
+        sets.EntryType = Pending;
+        for (int i = 0; i < 1000; i++) {
+            ExtDialog.OnClickBtnEntryDecrease();
+            if (sets.EntryLevel < discountedPrice) {
+                break;
             }
-
-            ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         }
 
-        if (AutoTradeMode == "SELL" && sets.TradeDirection == Short && !isBuyBar)
-        {
-            AutoTradeMode = "NONE";
-
-            // Aggressive strategy, commented out for now
-            sets.EntryType = StopLimit;
-            for (int i = 0; i < 10; i++) {
-                ExtDialog.OnClickBtnEntryIncrease();
-            }
-
-            // Reduce SL by 1 pip
-            // for (int i = 0; i < 10; i++) {
-            //     ExtDialog.OnClickBtnStopLossDecrease();
-            // }
-
-            if (EnableWebTrade) {
-                Trade();
-            }
-
-            ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+        if (EnableWebTrade) {
+            Trade();
         }
+
+        ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+    }
+
+    if (AutoTradeMode == "SELL" && sets.TradeDirection == Short && !isBuyBar)
+    {
+        AutoTradeMode = "NONE";
+
+        double previousClosePrice = iClose(NULL, PERIOD_M1, 1);
+        double fullPriceRange = sets.StopLossLevel - previousClosePrice;
+        double discountedPrice = previousClosePrice + (fullPriceRange * 0.2);
+
+        sets.EntryType = Pending;
+        for (int i = 0; i < 1000; i++) {
+            ExtDialog.OnClickBtnEntryIncrease();
+            if (sets.EntryLevel > discountedPrice) {
+                break;
+            }
+        }
+
+        if (EnableWebTrade) {
+            Trade();
+        }
+
+        ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
 }
 
