@@ -678,6 +678,7 @@ void DoAutoCorrectTp(bool force = false)
         return;
     }
 
+    // Find maximum multiplier that will hit the target equity goal
     CustomTPMultiplier = 0;
     for (int i = 0; i < 10; i++) {
         ExtDialog.OnClickBtnTakeProfitsNumberAdd();
@@ -687,6 +688,20 @@ void DoAutoCorrectTp(bool force = false)
             break;
         }
     }
+
+    // Pullback by one multiplier
+    ExtDialog.OnClickBtnTakeProfitsNumberMinus();
+    ExtDialog.RefreshValues();
+
+    for (int i = 1; i < 10; i++) {
+        ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
+        ExtDialog.RefreshValues();
+
+        if (CustomEquityGoal < sets.TpLinePrice) {
+            break;
+        }
+    }
+
 }
 
 void DoFetchWebCommands()

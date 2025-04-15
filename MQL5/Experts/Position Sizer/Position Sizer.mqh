@@ -78,7 +78,7 @@ public:
     virtual bool     IsMinimized() {return m_minimized;}
     virtual void     IniFileLoad() {if (FileIsExist(ExtDialog.IniFileName() + ExtDialog.IniFileExt())) CAppDialog::IniFileLoad(); InitObjects();} // Need to init objects after ini file load.
     virtual void     EmulateMinMaxClick();
-            void     OnClickBtnTakeProfitsNumberAdd();
+            void     OnClickBtnTakeProfitsNumberAdd(bool miniIncrement = false);
             void     OnClickBtnTakeProfitsNumberMinus();
             void     OnClickBtnOrderOnNextBar();
             void     OnClickBtnTakeProfitsNumberRemove();
@@ -3581,9 +3581,13 @@ void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
 }
 
 // Generate a new TP on both the Main and Trading tabs, creating necessary data.
-void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberAdd()
+void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberAdd(bool miniIncrement = false)
 {
-    CustomTPMultiplier++;
+    if (miniIncrement) {
+        CustomTPMultiplier += 0.1;
+    } else {
+        CustomTPMultiplier++;
+    }
 
     m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 0) + " RRR");
 
