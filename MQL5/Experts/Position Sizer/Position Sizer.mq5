@@ -35,13 +35,12 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double TP_MultiplierVar = 1;
-string AutoTradeMode = "NONE";
-datetime CurrentBarIndex = 0;
-input double AutoCloseAtEquity = 5000; // Close all positions if this equity reached
-input bool EnableWebTrade = false; // Enable trade from web command?
-input string WebCommandDomain = "https://www.example.org"; // URL to the web command domain
-bool WebRequestInProgress = false;
+double CustomTPMultiplier = 1;
+string CustomTradeSignal = "NONE";
+datetime CustomCurrentBarIndex = 0;
+input double CustomEquityGoal = 5000; // Close all positions if this equity reached
+input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain
+bool CustomWebRequestInProgress = false;
 
 input group "Compactness"
 input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?
@@ -620,19 +619,19 @@ void OnTick()
 
 void DoAutoTrade()
 {
-    if (AutoTradeMode == "NONE") return;
+    if (CustomTradeSignal == "NONE") return;
 
-    if (CurrentBarIndex == iTime(NULL, PERIOD_M1, 0)) {
+    if (CustomCurrentBarIndex == iTime(NULL, PERIOD_M1, 0)) {
         return;
     }
 
-    CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+    CustomCurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
 
     bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
 
-    if (AutoTradeMode == "BUY" && sets.TradeDirection == Long && isBuyBar)
+    if (CustomTradeSignal == "BUY" && sets.TradeDirection == Long && isBuyBar)
     {
-        AutoTradeMode = "NONE";
+        CustomTradeSignal = "NONE";
 
         double previousClosePrice = iClose(NULL, PERIOD_M1, 1);
         double fullPriceRange = previousClosePrice - sets.StopLossLevel;
@@ -646,16 +645,14 @@ void DoAutoTrade()
             }
         }
 
-        if (EnableWebTrade) {
-            Trade();
-        }
+        Trade();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
 
-    if (AutoTradeMode == "SELL" && sets.TradeDirection == Short && !isBuyBar)
+    if (CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar)
     {
-        AutoTradeMode = "NONE";
+        CustomTradeSignal = "NONE";
 
         double previousClosePrice = iClose(NULL, PERIOD_M1, 1);
         double fullPriceRange = sets.StopLossLevel - previousClosePrice;
@@ -669,9 +666,7 @@ void DoAutoTrade()
             }
         }
 
-        if (EnableWebTrade) {
-            Trade();
-        }
+        Trade();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
@@ -679,16 +674,16 @@ void DoAutoTrade()
 
 void DoAutoCorrectTp(bool force = false)
 {
-    if (!force && AutoCloseAtEquity < sets.TpLinePrice) {
+    if (!force && CustomEquityGoal < sets.TpLinePrice) {
         return;
     }
 
-    TP_MultiplierVar = 0;
+    CustomTPMultiplier = 0;
     for (int i = 0; i < 10; i++) {
         ExtDialog.OnClickBtnTakeProfitsNumberAdd();
         ExtDialog.RefreshValues();
 
-        if (AutoCloseAtEquity < sets.TpLinePrice) {
+        if (CustomEquityGoal < sets.TpLinePrice) {
             break;
         }
     }
@@ -696,8 +691,8 @@ void DoAutoCorrectTp(bool force = false)
 
 void DoFetchWebCommands()
 {
-    if (WebRequestInProgress) return;
-    WebRequestInProgress = true;
+    if (CustomWebRequestInProgress) return;
+    CustomWebRequestInProgress = true;
 
     datetime currentTime = TimeCurrent();
     MqlDateTime timeStruct;
@@ -705,8 +700,8 @@ void DoFetchWebCommands()
     int currentHour = timeStruct.hour;
     int currentSecond = timeStruct.sec;
 
-    if (currentSecond % 10 != 0 || currentHour < 10 || currentHour > 19 || WebCommandDomain == "https://www.example.org") {
-        WebRequestInProgress = false;
+    if (currentSecond % 10 != 0 || currentHour < 10 || currentHour > 19 || CustomWebCommandDomain == "https://www.example.org") {
+        CustomWebRequestInProgress = false;
         return;
     }
 
@@ -716,13 +711,13 @@ void DoFetchWebCommands()
     ResetLastError();
 
     // NOTE: Enable this URL in Tools → Options → Expert Advisors
-    WebRequest("GET", WebCommandDomain + "/get", NULL, NULL, 3000, data, 0, result, headers);
+    WebRequest("GET", CustomWebCommandDomain + "/get", NULL, NULL, 3000, data, 0, result, headers);
 
     if (CharArrayToString(result, 0, 5) == "RESET") {
-        AutoTradeMode = "NONE";
+        CustomTradeSignal = "NONE";
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-        WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
+        WebRequest("GET", CustomWebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
         Print("RESET command received");
     } else if (CharArrayToString(result, 0, 3) == "BUY") {
@@ -730,10 +725,10 @@ void DoFetchWebCommands()
         sets.EntryType = StopLimit;
         ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
 
-        AutoTradeMode = "NONE";
+        CustomTradeSignal = "NONE";
         ExtDialog.OnClickBtnOrderOnNextBar();
 
-        WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
+        WebRequest("GET", CustomWebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
         Print("BUY command received");
     } else if (CharArrayToString(result, 0, 4) == "SELL") {
@@ -741,11 +736,11 @@ void DoFetchWebCommands()
         sets.EntryType = StopLimit;
         ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
 
-        AutoTradeMode = "NONE";
+        CustomTradeSignal = "NONE";
 
         ExtDialog.OnClickBtnOrderOnNextBar();
 
-        WebRequest("GET", WebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
+        WebRequest("GET", CustomWebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
         Print("SELL command received");
     } else if (CharArrayToString(result, 0, 4) == "HOLD") {
@@ -754,7 +749,7 @@ void DoFetchWebCommands()
         Print("Unknown command received: ", CharArrayToString(result));
     }
 
-    WebRequestInProgress = false;
+    CustomWebRequestInProgress = false;
 }
 
 void OnChartEvent(const int id,

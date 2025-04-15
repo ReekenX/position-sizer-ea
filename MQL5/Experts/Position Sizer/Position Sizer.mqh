@@ -1267,7 +1267,7 @@ void CPositionSizeCalculator::InitControlsValues()
         else m_BtnTakeProfit.Text(TRANSLATION_LABEL_TAKEPROFIT_MULTIPLE_DISTANCE + " x " + DoubleToString(TP_Multiplier, CountDecimalPlaces(TP_Multiplier)) + ":");
     }
 
-    m_BtnTakeProfit.Text("1:" + DoubleToString(TP_MultiplierVar, 0) + " RRR");
+    m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 0) + " RRR");
 
     if (sets.EntryType == Pending)
     {
@@ -2384,10 +2384,10 @@ void CPositionSizeCalculator::ProcessTPChange(const bool tp_button_click)
         // Profit = Risk * N + Commission * 2.
         // TP distance =  (Risk * N + Commission * 2) / Point_value.
         if ((UnitCost_reward != 0) && (OutputPositionSize != 0) && (TickSize != 0))
-            tp_distance = (RiskMoney * TP_MultiplierVar + OutputPositionSize * commission * 2) / (OutputPositionSize * UnitCost_reward / TickSize);
+            tp_distance = (RiskMoney * CustomTPMultiplier + OutputPositionSize * commission * 2) / (OutputPositionSize * UnitCost_reward / TickSize);
         if (tEntryLevel < tStopLossLevel) tp_distance = -tp_distance;
     }
-    else tp_distance = (tEntryLevel - tStopLossLevel) * TP_MultiplierVar;
+    else tp_distance = (tEntryLevel - tStopLossLevel) * CustomTPMultiplier;
 
     sets.TakeProfitLevel = NormalizeDouble(tEntryLevel + tp_distance, _Digits);
 
@@ -2412,7 +2412,7 @@ void CPositionSizeCalculator::ProcessTPChange(const bool tp_button_click)
         tTakeProfitLevel = sets.TakeProfitLevel;
         if (sets.ATRMultiplierSL > 0)
         {
-            sets.ATRMultiplierTP = NormalizeDouble(sets.ATRMultiplierSL * TP_MultiplierVar, 2);
+            sets.ATRMultiplierTP = NormalizeDouble(sets.ATRMultiplierSL * CustomTPMultiplier, 2);
             m_EdtATRMultiplierTP.Text(DoubleToString(sets.ATRMultiplierTP, 2));
         }
         if (!sets.TPDistanceInPoints) m_EdtTP.Text(DoubleToString(tTakeProfitLevel, _Digits));
@@ -3552,30 +3552,30 @@ void CPositionSizeCalculator::OnClickBtnStopPriceDecrease()
 
 void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
 {
-    if (AutoTradeMode != "NONE") {
-        AutoTradeMode = "NONE";
+    if (CustomTradeSignal != "NONE") {
+        CustomTradeSignal = "NONE";
         m_BtnOrderOnNextBar.Text(" ");
         return;
     }
 
     if (sets.TradeDirection == Long) {
-        AutoTradeMode = "BUY";
+        CustomTradeSignal = "BUY";
         m_BtnOrderOnNextBar.Text("B");
     } else {
-        AutoTradeMode = "SELL";
+        CustomTradeSignal = "SELL";
         m_BtnOrderOnNextBar.Text("S");
     }
 
-    CurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+    CustomCurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
 }
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
 {
-    if (TP_MultiplierVar == 1) return;
+    if (CustomTPMultiplier == 1) return;
 
-    TP_MultiplierVar--;
+    CustomTPMultiplier--;
 
-    m_BtnTakeProfit.Text("1:" + DoubleToString(TP_MultiplierVar, 0) + " RRR");
+    m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 0) + " RRR");
 
     return;
 }
@@ -3583,9 +3583,9 @@ void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
 // Generate a new TP on both the Main and Trading tabs, creating necessary data.
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberAdd()
 {
-    TP_MultiplierVar++;
+    CustomTPMultiplier++;
 
-    m_BtnTakeProfit.Text("1:" + DoubleToString(TP_MultiplierVar, 0) + " RRR");
+    m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 0) + " RRR");
 
     return;
 
