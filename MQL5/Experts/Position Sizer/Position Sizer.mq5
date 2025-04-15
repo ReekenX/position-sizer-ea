@@ -678,7 +678,7 @@ void DoAutoCorrectTp(bool force = false)
         return;
     }
 
-    // Find maximum multiplier that will hit the target equity goal
+    // Find maximum major multiplier (eg. 1:3 RRR, 1:4 RRR, etc)
     CustomTPMultiplier = 0;
     for (int i = 0; i < 10; i++) {
         ExtDialog.OnClickBtnTakeProfitsNumberAdd();
@@ -689,10 +689,12 @@ void DoAutoCorrectTp(bool force = false)
         }
     }
 
-    // Pullback by one multiplier
+    // Pullback by one major multiplier
     ExtDialog.OnClickBtnTakeProfitsNumberMinus();
     ExtDialog.RefreshValues();
 
+    // Figure out the minimum minor multiplier needed to
+    // reach the target equity goal (eg. 1:3.1 RRR, 1:3.2 RRR, etc)
     for (int i = 1; i < 10; i++) {
         ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
         ExtDialog.RefreshValues();
@@ -701,7 +703,6 @@ void DoAutoCorrectTp(bool force = false)
             break;
         }
     }
-
 }
 
 void DoFetchWebCommands()

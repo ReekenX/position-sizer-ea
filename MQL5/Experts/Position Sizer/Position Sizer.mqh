@@ -3575,7 +3575,7 @@ void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()
 
     CustomTPMultiplier--;
 
-    m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 0) + " RRR");
+    m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 1) + " RRR");
 
     return;
 }
@@ -3589,7 +3589,7 @@ void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberAdd(bool miniIncrement 
         CustomTPMultiplier++;
     }
 
-    m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 0) + " RRR");
+    m_BtnTakeProfit.Text("1:" + DoubleToString(CustomTPMultiplier, 1) + " RRR");
 
     return;
 
