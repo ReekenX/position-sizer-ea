@@ -41,6 +41,7 @@ datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Close all positions if this equity reached
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain
 bool CustomWebRequestInProgress = false;
+bool CustomIsCalculatingTP = false;
 
 input group "Compactness"
 input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?
@@ -674,9 +675,15 @@ void DoAutoTrade()
 
 void DoAutoCorrectTp(bool force = false)
 {
+    if (CustomIsCalculatingTP) {
+        return;
+    }
+
     if (!force && CustomEquityGoal < sets.TpLinePrice) {
         return;
     }
+
+    CustomIsCalculatingTP = true;
 
     // Find maximum major multiplier (eg. 1:3 RRR, 1:4 RRR, etc)
     CustomTPMultiplier = 0;
@@ -703,6 +710,12 @@ void DoAutoCorrectTp(bool force = false)
             break;
         }
     }
+
+    // Small chance that there are some rounding issues around the target
+    // equity goal. So, we add one more minor multiplier.
+    ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
+
+    CustomIsCalculatingTP = false;
 }
 
 void DoFetchWebCommands()
