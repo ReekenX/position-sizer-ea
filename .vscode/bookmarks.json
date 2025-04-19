@@ -1,0 +1,29 @@
+{
+	"files": [
+		{
+			"path": "MQL5/Experts/Position Sizer/Position Sizer.mq5",
+			"bookmarks": [
+				{
+					"line": 37,
+					"column": 0,
+					"label": "Variables"
+				},
+				{
+					"line": 675,
+					"column": 0,
+					"label": "TP Goal"
+				},
+				{
+					"line": 720,
+					"column": 0,
+					"label": "Fetch Web"
+				},
+				{
+					"line": 622,
+					"column": 0,
+					"label": "Trade"
+				}
+			]
+		}
+	]
+}

@@ -773,7 +773,8 @@ void DoFetchWebCommands()
 
         Print("SELL command received");
     } else if (CharArrayToString(result, 0, 4) == "HOLD") {
-        Print("HOLD command received");
+        // Disabled because very noisy
+        // Print("HOLD command received");
     } else {
         Print("Unknown command received: ", CharArrayToString(result));
     }
