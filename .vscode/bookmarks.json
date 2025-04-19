@@ -9,19 +9,29 @@
 					"label": "Variables"
 				},
 				{
-					"line": 675,
+					"line": 623,
 					"column": 0,
-					"label": "TP Goal"
+					"label": "Place Trade"
 				},
 				{
-					"line": 720,
+					"line": 683,
 					"column": 0,
-					"label": "Fetch Web"
+					"label": "Set TP Goal"
 				},
 				{
-					"line": 622,
+					"line": 728,
 					"column": 0,
-					"label": "Trade"
+					"label": "Web Commands"
+				}
+			]
+		},
+		{
+			"path": "MQL5/Experts/Position Sizer/Position Sizer.mqh",
+			"bookmarks": [
+				{
+					"line": 3552,
+					"column": 0,
+					"label": "Click Pre Trade Button"
 				}
 			]
 		}

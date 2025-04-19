@@ -38,8 +38,8 @@ string PanelCaptionBase = "";
 double CustomTPMultiplier = 1;
 string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
-input double CustomEquityGoal = 5000; // Close all positions if this equity reached
-input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain
+input double CustomEquityGoal = 5000; // Set TP to this equity
+input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 bool CustomWebRequestInProgress = false;
 bool CustomIsCalculatingTP = false;
 
@@ -620,8 +620,10 @@ void OnTick()
 
 void DoAutoTrade()
 {
+    // No trade signal, so we don't need to trade
     if (CustomTradeSignal == "NONE") return;
 
+    // Bar has not changed, so we don't need to trade
     if (CustomCurrentBarIndex == iTime(NULL, PERIOD_M1, 0)) {
         return;
     }
@@ -639,12 +641,15 @@ void DoAutoTrade()
         double discountedPrice = previousClosePrice - (fullPriceRange * 0.2);
 
         sets.EntryType = Pending;
-        for (int i = 0; i < 1000; i++) {
+
+        for (int i = 0; i < 100; i++) {
             ExtDialog.OnClickBtnEntryDecrease();
             if (sets.EntryLevel < discountedPrice) {
                 break;
             }
         }
+
+        Print("Placing a BUY order");
 
         Trade();
 
@@ -660,12 +665,15 @@ void DoAutoTrade()
         double discountedPrice = previousClosePrice + (fullPriceRange * 0.2);
 
         sets.EntryType = Pending;
-        for (int i = 0; i < 1000; i++) {
+
+        for (int i = 0; i < 100; i++) {
             ExtDialog.OnClickBtnEntryIncrease();
             if (sets.EntryLevel > discountedPrice) {
                 break;
             }
         }
+
+        Print("Placing a SELL order");
 
         Trade();
 
