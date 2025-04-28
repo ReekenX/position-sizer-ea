@@ -651,7 +651,7 @@ void DoAutoTrade()
 
         Print("Placing a BUY order");
 
-        Trade();
+        // Trade();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
@@ -675,7 +675,7 @@ void DoAutoTrade()
 
         Print("Placing a SELL order");
 
-        Trade();
+        // Trade();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
