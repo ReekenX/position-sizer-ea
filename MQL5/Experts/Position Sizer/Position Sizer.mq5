@@ -1,13 +1,13 @@
 //+------------------------------------------------------------------+
 //|                                               Position Sizer.mq5 |
-//|                                  Copyright © 2024, EarnForex.com |
+//|                                  Copyright © 2025, EarnForex.com |
 //|                                       https://www.earnforex.com/ |
 //+------------------------------------------------------------------+
 #property copyright "EarnForex.com"
 #property link      "https://www.earnforex.com/metatrader-expert-advisors/Position-Sizer/"
 #property icon      "EF-Icon-64x64px.ico"
-#property version   "3.10"
-string    Version = "3.10";
+#property version   "3.11"
+string    Version = "3.11";
 
 #include "Translations\English.mqh"
 //#include "Translations\Arabic.mqh"
@@ -38,13 +38,12 @@ string PanelCaptionBase = "";
 double CustomTPMultiplier = 1;
 string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
-input double CustomEquityGoal = 5000; // Set TP to this equity
+input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 bool CustomWebRequestInProgress = false;
-bool CustomIsCalculatingTP = false;
 
 input group "Compactness"
-input bool ShowLineLabels = true; // ShowLineLabels: Show point distance for TP/SL near lines?
+input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
 input bool ShowAdditionalSLLabel = false; // ShowAdditionalSLLabel: Show SL $/% label?
 input bool ShowAdditionalTPLabel = false; // ShowAdditionalTPLabel: Show TP $/% + R/R label?
 input bool ShowAdditionalEntryLabel = false; // ShowAdditionalEntryLabel: Show Position Size label?
@@ -102,10 +101,11 @@ input ACCOUNT_BUTTON DefaultAccountButton = Balance; // AccountButton: Balance/E
 input double DefaultRisk = 1; // Risk: Initial risk tolerance in percentage points
 input double DefaultMoneyRisk = 0; // MoneyRisk: If > 0, money risk tolerance in currency.
 input double DefaultPositionSize = 0; // PositionSize: If > 0, position size in lots.
-input bool DefaultCountPendingOrders = false; // CountPendingOrders: Count pending orders for portfolio risk.
+input INCLUDE_ORDERS DefaultIncludeOrders = INCLUDE_ORDERS_ALL; // IncludeOrders: Include which orders for portfolio risk?
 input bool DefaultIgnoreOrdersWithoutSL = false; // IgnoreOrdersWithoutSL: Ignore orders w/o SL in portfolio risk.
 input bool DefaultIgnoreOrdersWithoutTP = false; // IgnoreOrdersWithoutTP: Ignore orders w/o TP in portfolio risk.
-input IGNORE_SYMBOLS DefaultIgnoreSymbols = IGNORE_SYMBOLS_NONE; // IgnoreSymbols: Ignore trades in some symbols for portfolio risk?
+input INCLUDE_SYMBOLS DefaultIncludeSymbols = INCLUDE_SYMBOLS_ALL; // IncludeSymbols: Include trades in which symbols for portfolio risk?
+input INCLUDE_DIRECTIONS DefaultIncludeDirections = INCLUDE_DIRECTIONS_ALL; // IncludeDirections: Include which directions for portfolio risk?
 input double DefaultCustomLeverage = 0; // CustomLeverage: Default custom leverage for Margin tab.
 input int DefaultMagicNumber = 2022052714; // MagicNumber: Default magic number for Trading tab.
 input string DefaultCommentary = ""; // Commentary: Default order comment for Trading tab.
@@ -173,6 +173,10 @@ input bool PrefillAdditionalTPsBasedOnMain = true; // Prefill additional TPs bas
 input bool AskBeforeClosing = false; // Ask for confirmation before closing the panel?
 input bool CapMaxPositionSizeBasedOnMargin = false; // Cap position size based on avaiable margin?
 input bool LessRestrictiveMaxLimits = false; // Allow smaller trades when trading limits are exceeded?
+input color LongButtonColor = CONTROLS_BUTTON_COLOR_BG; // Long Button Color
+input color ShortButtonColor = CONTROLS_BUTTON_COLOR_BG; // Short Button Color
+input color TradeButtonColor = CONTROLS_BUTTON_COLOR_BG; // Trade Button Color
+input bool DoNotDeleteLinesLabels = false; // Do Not Delete Lines/Labels on on deinitialization?
 
 CPositionSizeCalculator* ExtDialog;
 
@@ -190,6 +194,7 @@ string OldSymbol = "";
 int OldTakeProfitsNumber = -1;
 string SymbolForTrading;
 int Mouse_Last_X = 0, Mouse_Last_Y = 0; // For SL/TP hotkeys.
+color LongButtonColorAdjusted, ShortButtonColorAdjusted, TradeButtonColorAdjusted; // Based on the DarkMode setting.
 
 int OnInit()
 {
@@ -211,7 +216,34 @@ int OnInit()
         CONTROLS_BUTTON_COLOR_TP_UNLOCKED = CONTROLS_BUTTON_COLOR_BG;
         CONTROLS_BUTTON_COLOR_TP_LOCKED = CONTROLS_BUTTON_COLOR_ENABLE;
     }
-
+    if (LongButtonColor == CONTROLS_BUTTON_COLOR_BG) // Default color is used.
+    {
+        if (DarkMode) LongButtonColorAdjusted = DARKMODE_BUTTON_BG_COLOR;
+        else LongButtonColorAdjusted = CONTROLS_BUTTON_COLOR_BG;
+    }
+    else
+    {
+        LongButtonColorAdjusted = LongButtonColor;
+    }
+    if (ShortButtonColor == CONTROLS_BUTTON_COLOR_BG) // Default color is used.
+    {
+        if (DarkMode) ShortButtonColorAdjusted = DARKMODE_BUTTON_BG_COLOR;
+        else ShortButtonColorAdjusted = CONTROLS_BUTTON_COLOR_BG;
+    }
+    else
+    {
+        ShortButtonColorAdjusted = ShortButtonColor;
+    }
+    if (TradeButtonColor == CONTROLS_BUTTON_COLOR_BG) // Default color is used.
+    {
+        if (DarkMode) TradeButtonColorAdjusted = DARKMODE_BUTTON_BG_COLOR;
+        else TradeButtonColorAdjusted = CONTROLS_BUTTON_COLOR_BG;
+    }
+    else
+    {
+        TradeButtonColorAdjusted = TradeButtonColor;
+    }
+    
     TickSize = -1;
 
     if (DeinitializationReason != REASON_CHARTCHANGE) ExtDialog = new CPositionSizeCalculator; // Create the panel only if it is not a symbol/timeframe change.
@@ -293,10 +325,11 @@ int OnInit()
         sets.CustomBalance = CustomBalance;
         sets.RiskFromPositionSize = false;
         sets.AccountButton = DefaultAccountButton;
-        sets.CountPendingOrders = DefaultCountPendingOrders; // If true, portfolio risk calculation will also involve pending orders.
+        sets.IncludeOrders = DefaultIncludeOrders; // Will portfolio risk calculation include all orders?
         sets.IgnoreOrdersWithoutSL = DefaultIgnoreOrdersWithoutSL; // If true, portfolio risk calculation will skip orders without stop-loss.
         sets.IgnoreOrdersWithoutTP = DefaultIgnoreOrdersWithoutTP; // If true, portfolio risk calculation will skip orders without take-profit.
-        sets.IgnoreSymbols = DefaultIgnoreSymbols; // Skip trades in other/current/no symbols for portfolio risk calculation.
+        sets.IncludeSymbols = DefaultIncludeSymbols; // Include all symbols in portfolio risk calculation?
+        sets.IncludeDirections = DefaultIncludeDirections; // Include all trade directions in portfolio risk calculation?
         sets.HideAccSize = HideAccSize; // If true, account size line will not be shown.
         sets.ShowLines = DefaultShowLines;
         sets.SelectedTab = MainTab;
@@ -414,6 +447,9 @@ int OnInit()
         }
     }    
 
+    if (TradeSymbol != "") SymbolForTrading = TradeSymbol;
+    else SymbolForTrading = _Symbol;
+
     // Avoid re-initialization on timeframe change and on symbol change with the 'keep panel' setting.
     if ((DeinitializationReason != REASON_CHARTCHANGE) || ((DeinitializationReason == REASON_CHARTCHANGE) && (OldSymbol != _Symbol) && ((SymbolChange == SYMBOL_CHART_CHANGE_HARD_RESET) || (SymbolChange == SYMBOL_CHART_CHANGE_EACH_OWN))))
     {
@@ -497,9 +533,6 @@ int OnInit()
     
     if (ShowATROptions) ExtDialog.InitATR();
 
-    if (TradeSymbol != "") SymbolForTrading = TradeSymbol;
-    else SymbolForTrading = _Symbol;
-
     if (DarkMode)
     {
         int total = ObjectsTotal(ChartID());
@@ -523,13 +556,26 @@ int OnInit()
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_COLOR, DARKMODE_MAIN_AREA_BORDER_COLOR);
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, DARKMODE_MAIN_AREA_BG_COLOR);
             }
+            else if (obj_name == ExtDialog.Name() + "m_BtnEntry") // Long/Short
+            {
+                if (sets.TradeDirection == Long)
+                {
+                    ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, LongButtonColorAdjusted);
+                }
+                else if (sets.TradeDirection == Short)
+                {
+                    ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, ShortButtonColorAdjusted);
+                }
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
+            }
+            else if ((obj_name == ExtDialog.Name() + "m_BtnMainTrade") || (obj_name == ExtDialog.Name() + "m_BtnTrade") || (obj_name == ExtDialog.Name() + "m_OutsideTradeButton")) // Any of the Trade buttons (Main tab, Trading tab, outside).
+            {
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, TradeButtonColorAdjusted);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
+            }
             else if (StringSubstr(obj_name, 0, StringLen(ExtDialog.Name() + "m_Edt")) == ExtDialog.Name() + "m_Edt")
             {
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, DARKMODE_EDIT_BG_COLOR);
-                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
-            }
-            else if (obj_name == ExtDialog.Name() + "m_BtnTakeProfit") // TakeProfit button has its own colors.
-            {
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
             }
             else if (StringSubstr(obj_name, 0, StringLen(ExtDialog.Name() + "m_Btn")) == ExtDialog.Name() + "m_Btn")
@@ -567,7 +613,7 @@ void OnDeinit(const int reason)
 
     if ((reason == REASON_CLOSE) || (reason == REASON_REMOVE) || (reason == REASON_CHARTCLOSE) || (reason == REASON_PROGRAM))
     {
-        ObjectsDeleteAll(0, ObjectPrefix); // Delete all lines if platform was closed.
+        if (!DoNotDeleteLinesLabels) ObjectsDeleteAll(0, ObjectPrefix); // Delete all lines if platform was closed.
         if ((reason == REASON_REMOVE) || (reason == REASON_PROGRAM))
         {
             if (SettingsFile == "") ExtDialog.DeleteSettingsFile();
@@ -590,17 +636,20 @@ void OnDeinit(const int reason)
     }
     else
     {
-        ObjectDelete(0, ObjectPrefix + "StopLossLabel");
-        ObjectsDeleteAll(0, ObjectPrefix + "TakeProfitLabel", -1, OBJ_LABEL);
-        ObjectDelete(0, ObjectPrefix + "StopPriceLabel");
-        ObjectsDeleteAll(0, ObjectPrefix + "TPAdditionalLabel", -1, OBJ_LABEL);
-        ObjectDelete(0, ObjectPrefix + "SLAdditionalLabel");
-        ObjectDelete(0, ObjectPrefix + "EntryAdditionalLabel");
+        if (!DoNotDeleteLinesLabels)
+        {
+            ObjectDelete(0, ObjectPrefix + "StopLossLabel");
+            ObjectsDeleteAll(0, ObjectPrefix + "TakeProfitLabel", -1, OBJ_LABEL);
+            ObjectDelete(0, ObjectPrefix + "StopPriceLabel");
+            ObjectsDeleteAll(0, ObjectPrefix + "TPAdditionalLabel", -1, OBJ_LABEL);
+            ObjectDelete(0, ObjectPrefix + "SLAdditionalLabel");
+            ObjectDelete(0, ObjectPrefix + "EntryAdditionalLabel");
+        }
         ExtDialog.Destroy();
         delete ExtDialog;
     }
     
-    ObjectsDeleteAll(0, ObjectPrefix + "BE"); // Delete all BE lines and labels.
+    if (!DoNotDeleteLinesLabels) ObjectsDeleteAll(0, ObjectPrefix + "BE"); // Delete all BE lines and labels.
     
     ChartRedraw();
 }
@@ -612,8 +661,6 @@ void OnTick()
     DoAutoTrade();
 
     DoFetchWebCommands();
-
-    DoAutoCorrectTp();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
@@ -683,15 +730,9 @@ void DoAutoTrade()
 
 void DoAutoCorrectTp(bool force = false)
 {
-    if (CustomIsCalculatingTP) {
-        return;
-    }
-
     if (!force && CustomEquityGoal < sets.TpLinePrice) {
         return;
     }
-
-    CustomIsCalculatingTP = true;
 
     // Find maximum major multiplier (eg. 1:3 RRR, 1:4 RRR, etc)
     CustomTPMultiplier = 0;
@@ -722,8 +763,6 @@ void DoAutoCorrectTp(bool force = false)
     // Small chance that there are some rounding issues around the target
     // equity goal. So, we add one more minor multiplier.
     ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
-
-    CustomIsCalculatingTP = false;
 }
 
 void DoFetchWebCommands()
@@ -983,6 +1022,7 @@ void OnChartEvent(const int id,
             &&  (((!CtrlRequired_SwitchHideShowLinesHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SwitchHideShowLinesHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
         {
             ExtDialog.OnClickBtnLines();
+            ChartRedraw();
         }  
         // Trade:
         else if ((MainKey_TradeHotKey != 0) && (lparam == MainKey_TradeHotKey)
@@ -1026,8 +1066,10 @@ void OnChartEvent(const int id,
                 // If "TP locked on SL" mode was on, turn it off.
                 if (sets.TPLockedOnSL)
                 {
-                    ExtDialog.SetTPButtonBackGroundColor(CONTROLS_BUTTON_COLOR_TP_UNLOCKED);
                     sets.TPLockedOnSL = false;
+                    ObjectSetInteger(ChartID(), ObjectPrefix + "TakeProfitLine", OBJPROP_SELECTABLE, true);
+                    ObjectSetInteger(ChartID(), ObjectPrefix + "TakeProfitLine", OBJPROP_SELECTED, sets.WasSelectedTakeProfitLine);
+                    ExtDialog.ResetChkTPLockedOnSL();
                 }
                 if (TickSize > 0) price = NormalizeDouble(MathRound(price / TickSize) * TickSize, _Digits);
                 ObjectSetDouble(ChartID(), ObjectPrefix + "TakeProfitLine", OBJPROP_PRICE, price);
@@ -1156,7 +1198,7 @@ void OnChartEvent(const int id,
             int chart_width = (int)ChartGetInteger(0, CHART_WIDTH_IN_PIXELS);
             if (ExtDialog.Left() > chart_width) ExtDialog.Move(chart_width - ExtDialog.Width(), ExtDialog.Top());
             // If chart was brought on top, refresh values to move labels.
-            if ((prev_chart_on_top == false) && (ShowLineLabels)) ExtDialog.RefreshValues();
+            if ((prev_chart_on_top == false) && ((ShowMainLineLabels) || (ShowAdditionalEntryLabel) || (ShowAdditionalTPLabel) || (ShowAdditionalSLLabel))) ExtDialog.RefreshValues();
         }
         // Remember if the chart is on top or is minimized.
         prev_chart_on_top = ChartGetInteger(ChartID(), CHART_BRING_TO_TOP);

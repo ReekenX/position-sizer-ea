@@ -4,22 +4,22 @@
 			"path": "MQL5/Experts/Position Sizer/Position Sizer.mq5",
 			"bookmarks": [
 				{
-					"line": 37,
+					"line": 89,
 					"column": 0,
 					"label": "Variables"
 				},
 				{
-					"line": 623,
+					"line": 671,
 					"column": 0,
 					"label": "Place Trade"
 				},
 				{
-					"line": 683,
+					"line": 731,
 					"column": 0,
 					"label": "Set TP Goal"
 				},
 				{
-					"line": 728,
+					"line": 768,
 					"column": 0,
 					"label": "Web Commands"
 				}
@@ -29,7 +29,7 @@
 			"path": "MQL5/Experts/Position Sizer/Position Sizer.mqh",
 			"bookmarks": [
 				{
-					"line": 3552,
+					"line": 3554,
 					"column": 0,
 					"label": "Click Pre Trade Button"
 				}
