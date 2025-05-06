@@ -149,6 +149,7 @@ input string MinimizeMaximizeHotkey = "`"; // MinimizeMaximizeHotkey: Minimize/m
 input string SwitchSLPointsLevelHotKey = "Shift+S"; // SwitchSLPointsLevelHotKey: Switch SL between points and level.
 input string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
 input string SetTPGoalHotKey = "G"; // SetTPGoalHotKey: Set TP to this equity.
+input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Set Entry with 20% pullback.
 input group "Miscellaneous"
 input double TP_Multiplier = 1; // TP Multiplier for SL value, appears in Take-profit button.
 input bool UseCommissionToSetTPDistance = false; // UseCommissionToSetTPDistance: For TP button.
@@ -187,9 +188,9 @@ uint LastRecalculationTime = 0;
 bool StopLossLineIsBeingMoved = false;
 bool TakeProfitLineIsBeingMoved[]; // Separate for each TP.
 uchar MainKey_TradeHotKey = 0, MainKey_SwitchOrderTypeHotKey = 0, MainKey_SwitchEntryDirectionHotKey = 0, MainKey_SwitchHideShowLinesHotKey = 0, MainKey_SetStopLossHotKey = 0, MainKey_SetTakeProfitHotKey = 0, MainKey_SetEntryHotKey = 0, MainKey_MinimizeMaximizeHotkey = 0, MainKey_SwitchSLPointsLevelHotKey = 0, MainKey_SwitchTPPointsLevelHotKey = 0;
-uchar MainKey_SetTPGoalHotKey = 0;
-bool CtrlRequired_TradeHotKey = false, CtrlRequired_SwitchOrderTypeHotKey = false, CtrlRequired_SwitchEntryDirectionHotKey = false, CtrlRequired_SwitchHideShowLinesHotKey = false, CtrlRequired_SetStopLossHotKey = false, CtrlRequired_SetTakeProfitHotKey = false, CtrlRequired_SetEntryHotKey = false, CtrlRequired_MinimizeMaximizeHotkey = false, CtrlRequired_SwitchSLPointsLevelHotKey = false, CtrlRequired_SwitchTPPointsLevelHotKey = false, CtrlRequired_SetTPGoalHotKey = false;
-bool ShiftRequired_TradeHotKey = false, ShiftRequired_SwitchOrderTypeHotKey = false, ShiftRequired_SwitchEntryDirectionHotKey = false, ShiftRequired_SwitchHideShowLinesHotKey = false, ShiftRequired_SetStopLossHotKey = false, ShiftRequired_SetTakeProfitHotKey = false, ShiftRequired_SetEntryHotKey = false, ShiftRequired_MinimizeMaximizeHotkey = false, ShiftRequired_SwitchSLPointsLevelHotKey = false, ShiftRequired_SwitchTPPointsLevelHotKey = false, ShiftRequired_SetTPGoalHotKey = false;
+uchar MainKey_SetTPGoalHotKey = 0, MainKey_SetAdjustEntryHotKey = 0;
+bool CtrlRequired_TradeHotKey = false, CtrlRequired_SwitchOrderTypeHotKey = false, CtrlRequired_SwitchEntryDirectionHotKey = false, CtrlRequired_SwitchHideShowLinesHotKey = false, CtrlRequired_SetStopLossHotKey = false, CtrlRequired_SetTakeProfitHotKey = false, CtrlRequired_SetEntryHotKey = false, CtrlRequired_MinimizeMaximizeHotkey = false, CtrlRequired_SwitchSLPointsLevelHotKey = false, CtrlRequired_SwitchTPPointsLevelHotKey = false, CtrlRequired_SetTPGoalHotKey = false, CtrlRequired_SetAdjustEntryHotKey = false;
+bool ShiftRequired_TradeHotKey = false, ShiftRequired_SwitchOrderTypeHotKey = false, ShiftRequired_SwitchEntryDirectionHotKey = false, ShiftRequired_SwitchHideShowLinesHotKey = false, ShiftRequired_SetStopLossHotKey = false, ShiftRequired_SetTakeProfitHotKey = false, ShiftRequired_SetEntryHotKey = false, ShiftRequired_MinimizeMaximizeHotkey = false, ShiftRequired_SwitchSLPointsLevelHotKey = false, ShiftRequired_SwitchTPPointsLevelHotKey = false, ShiftRequired_SetTPGoalHotKey = false, ShiftRequired_SetAdjustEntryHotKey = false;
 bool AdditionalTPLineMoved = false;
 int DeinitializationReason = -1;
 string OldSymbol = "";
@@ -432,6 +433,7 @@ int OnInit()
         else MainKey_MinimizeMaximizeHotkey = 0;
 
         DissectHotKeyCombination(SetTPGoalHotKey, ShiftRequired_SetTPGoalHotKey, CtrlRequired_SetTPGoalHotKey, MainKey_SetTPGoalHotKey);
+        DissectHotKeyCombination(SetAdjustEntryHotKey, ShiftRequired_SetAdjustEntryHotKey, CtrlRequired_SetAdjustEntryHotKey, MainKey_SetAdjustEntryHotKey);
     }
     else if (OldSymbol != _Symbol)
     {
@@ -700,10 +702,6 @@ void DoAutoTrade()
             }
         }
 
-        Print("Placing a BUY order");
-
-        // Trade();
-
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
 
@@ -724,10 +722,6 @@ void DoAutoTrade()
             }
         }
 
-        Print("Placing a SELL order");
-
-        // Trade();
-
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
 }
@@ -740,7 +734,7 @@ void DoAutoCorrectTp()
         ExtDialog.OnClickBtnTakeProfitsNumberAdd();
         ExtDialog.RefreshValues();
 
-        if (CustomEquityGoal < sets.TpLinePrice) {
+        if (CustomEquityGoal < sets.TakeProfitLevel) {
             break;
         }
     }
@@ -755,7 +749,7 @@ void DoAutoCorrectTp()
         ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
         ExtDialog.RefreshValues();
 
-        if (CustomEquityGoal < sets.TpLinePrice) {
+        if (CustomEquityGoal < sets.TakeProfitLevel) {
             break;
         }
     }
@@ -763,6 +757,48 @@ void DoAutoCorrectTp()
     // Small chance that there are some rounding issues around the target
     // equity goal. So, we add one more minor multiplier.
     ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
+}
+
+void DoPullbackEntry()
+{
+    // TODO: This function does not work as expected.
+
+    Print("Trade direction: start");
+
+    if (sets.TradeDirection == Long)
+    {
+        Print("Trade direction: long");
+
+        double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
+        double discountedPrice = sets.EntryLevel - (fullPriceRange * 0.2);
+
+        Print("Discounted price (A): ", discountedPrice);
+
+        sets.EntryType = Pending;
+
+        for (int i = 0; i < 100; i++) {
+            ExtDialog.OnClickBtnEntryDecrease();
+            if (sets.EntryLevel < discountedPrice) {
+                break;
+            }
+        }
+    } else if (sets.TradeDirection == Short) {
+        Print("Trade direction: short");
+
+        double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
+        double discountedPrice = sets.EntryLevel + (fullPriceRange * 0.2);
+
+        Print("Discounted price (B): ", discountedPrice);
+
+        sets.EntryType = Pending;
+
+        for (int i = 0; i < 100; i++) {
+            ExtDialog.OnClickBtnEntryIncrease();
+            if (sets.EntryLevel > discountedPrice) {
+                break;
+            }
+        }
+    }
 }
 
 void DoFetchWebCommands()
@@ -1150,6 +1186,10 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetTPGoalHotKey != 0) && (lparam == MainKey_SetTPGoalHotKey))
         {
             DoAutoCorrectTp();
+        }
+        else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_SetAdjustEntryHotKey))
+        {
+            DoPullbackEntry();
         }
     }
 

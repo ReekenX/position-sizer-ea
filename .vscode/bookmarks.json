@@ -9,19 +9,24 @@
 					"label": "Variables"
 				},
 				{
-					"line": 627,
+					"line": 629,
 					"column": 0,
 					"label": "Place Trade"
 				},
 				{
-					"line": 687,
+					"line": 689,
 					"column": 0,
 					"label": "Set TP Goal"
 				},
 				{
-					"line": 732,
+					"line": 726,
 					"column": 0,
 					"label": "Web Commands"
+				},
+				{
+					"line": 761,
+					"column": 0,
+					"label": "Pullback Entry"
 				}
 			]
 		},
@@ -29,7 +34,7 @@
 			"path": "MQL5/Experts/Position Sizer/Position Sizer.mqh",
 			"bookmarks": [
 				{
-					"line": 3552,
+					"line": 3553,
 					"column": 0,
 					"label": "Click Pre Trade Button"
 				}
