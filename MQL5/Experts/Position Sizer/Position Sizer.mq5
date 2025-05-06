@@ -148,6 +148,7 @@ input string SetEntryHotKey = "E"; // SetEntryHotKey: Set Entry to where mouse p
 input string MinimizeMaximizeHotkey = "`"; // MinimizeMaximizeHotkey: Minimize/maximize the panel.
 input string SwitchSLPointsLevelHotKey = "Shift+S"; // SwitchSLPointsLevelHotKey: Switch SL between points and level.
 input string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
+input string SetTPGoalHotKey = "G"; // SetTPGoalHotKey: Set TP to this equity.
 input group "Miscellaneous"
 input double TP_Multiplier = 1; // TP Multiplier for SL value, appears in Take-profit button.
 input bool UseCommissionToSetTPDistance = false; // UseCommissionToSetTPDistance: For TP button.
@@ -186,8 +187,9 @@ uint LastRecalculationTime = 0;
 bool StopLossLineIsBeingMoved = false;
 bool TakeProfitLineIsBeingMoved[]; // Separate for each TP.
 uchar MainKey_TradeHotKey = 0, MainKey_SwitchOrderTypeHotKey = 0, MainKey_SwitchEntryDirectionHotKey = 0, MainKey_SwitchHideShowLinesHotKey = 0, MainKey_SetStopLossHotKey = 0, MainKey_SetTakeProfitHotKey = 0, MainKey_SetEntryHotKey = 0, MainKey_MinimizeMaximizeHotkey = 0, MainKey_SwitchSLPointsLevelHotKey = 0, MainKey_SwitchTPPointsLevelHotKey = 0;
-bool CtrlRequired_TradeHotKey = false, CtrlRequired_SwitchOrderTypeHotKey = false, CtrlRequired_SwitchEntryDirectionHotKey = false, CtrlRequired_SwitchHideShowLinesHotKey = false, CtrlRequired_SetStopLossHotKey = false, CtrlRequired_SetTakeProfitHotKey = false, CtrlRequired_SetEntryHotKey = false, CtrlRequired_MinimizeMaximizeHotkey = false, CtrlRequired_SwitchSLPointsLevelHotKey = false, CtrlRequired_SwitchTPPointsLevelHotKey = false;
-bool ShiftRequired_TradeHotKey = false, ShiftRequired_SwitchOrderTypeHotKey = false, ShiftRequired_SwitchEntryDirectionHotKey = false, ShiftRequired_SwitchHideShowLinesHotKey = false, ShiftRequired_SetStopLossHotKey = false, ShiftRequired_SetTakeProfitHotKey = false, ShiftRequired_SetEntryHotKey = false, ShiftRequired_MinimizeMaximizeHotkey = false, ShiftRequired_SwitchSLPointsLevelHotKey = false, ShiftRequired_SwitchTPPointsLevelHotKey = false;
+uchar MainKey_SetTPGoalHotKey = 0;
+bool CtrlRequired_TradeHotKey = false, CtrlRequired_SwitchOrderTypeHotKey = false, CtrlRequired_SwitchEntryDirectionHotKey = false, CtrlRequired_SwitchHideShowLinesHotKey = false, CtrlRequired_SetStopLossHotKey = false, CtrlRequired_SetTakeProfitHotKey = false, CtrlRequired_SetEntryHotKey = false, CtrlRequired_MinimizeMaximizeHotkey = false, CtrlRequired_SwitchSLPointsLevelHotKey = false, CtrlRequired_SwitchTPPointsLevelHotKey = false, CtrlRequired_SetTPGoalHotKey = false;
+bool ShiftRequired_TradeHotKey = false, ShiftRequired_SwitchOrderTypeHotKey = false, ShiftRequired_SwitchEntryDirectionHotKey = false, ShiftRequired_SwitchHideShowLinesHotKey = false, ShiftRequired_SetStopLossHotKey = false, ShiftRequired_SetTakeProfitHotKey = false, ShiftRequired_SetEntryHotKey = false, ShiftRequired_MinimizeMaximizeHotkey = false, ShiftRequired_SwitchSLPointsLevelHotKey = false, ShiftRequired_SwitchTPPointsLevelHotKey = false, ShiftRequired_SetTPGoalHotKey = false;
 bool AdditionalTPLineMoved = false;
 int DeinitializationReason = -1;
 string OldSymbol = "";
@@ -428,6 +430,8 @@ int OnInit()
         else MainKey_SwitchTPPointsLevelHotKey = 0;
         if (MinimizeMaximizeHotkey != "") DissectHotKeyCombination(MinimizeMaximizeHotkey, ShiftRequired_MinimizeMaximizeHotkey, CtrlRequired_MinimizeMaximizeHotkey, MainKey_MinimizeMaximizeHotkey);
         else MainKey_MinimizeMaximizeHotkey = 0;
+
+        DissectHotKeyCombination(SetTPGoalHotKey, ShiftRequired_SetTPGoalHotKey, CtrlRequired_SetTPGoalHotKey, MainKey_SetTPGoalHotKey);
     }
     else if (OldSymbol != _Symbol)
     {
@@ -728,12 +732,8 @@ void DoAutoTrade()
     }
 }
 
-void DoAutoCorrectTp(bool force = false)
+void DoAutoCorrectTp()
 {
-    if (!force && CustomEquityGoal < sets.TpLinePrice) {
-        return;
-    }
-
     // Find maximum major multiplier (eg. 1:3 RRR, 1:4 RRR, etc)
     CustomTPMultiplier = 0;
     for (int i = 0; i < 10; i++) {
@@ -1146,6 +1146,10 @@ void OnChartEvent(const int id,
                 }
             }
             ExtDialog.RefreshValues();
+        }
+        else if ((MainKey_SetTPGoalHotKey != 0) && (lparam == MainKey_SetTPGoalHotKey))
+        {
+            DoAutoCorrectTp();
         }
     }
 
