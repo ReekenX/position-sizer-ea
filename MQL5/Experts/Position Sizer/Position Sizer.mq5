@@ -763,8 +763,6 @@ void DoPullbackEntry()
 {
     // TODO: This function does not work as expected.
 
-    Print("Trade direction: start");
-
     if (sets.TradeDirection == Long)
     {
         Print("Trade direction: long");
@@ -782,7 +780,9 @@ void DoPullbackEntry()
                 break;
             }
         }
-    } else if (sets.TradeDirection == Short) {
+    }
+    else if (sets.TradeDirection == Short)
+    {
         Print("Trade direction: short");
 
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
