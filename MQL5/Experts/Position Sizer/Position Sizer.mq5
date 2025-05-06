@@ -761,43 +761,25 @@ void DoAutoCorrectTp()
 
 void DoPullbackEntry()
 {
-    // TODO: This function does not work as expected.
-
     if (sets.TradeDirection == Long)
     {
-        Print("Trade direction: long");
-
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
         double discountedPrice = sets.EntryLevel - (fullPriceRange * 0.2);
 
-        Print("Discounted price (A): ", discountedPrice);
-
         sets.EntryType = Pending;
 
-        for (int i = 0; i < 100; i++) {
-            ExtDialog.OnClickBtnEntryDecrease();
-            if (sets.EntryLevel < discountedPrice) {
-                break;
-            }
-        }
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedPrice, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
     }
     else if (sets.TradeDirection == Short)
     {
-        Print("Trade direction: short");
-
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
         double discountedPrice = sets.EntryLevel + (fullPriceRange * 0.2);
 
-        Print("Discounted price (B): ", discountedPrice);
-
         sets.EntryType = Pending;
 
-        for (int i = 0; i < 100; i++) {
-            ExtDialog.OnClickBtnEntryIncrease();
-            if (sets.EntryLevel > discountedPrice) {
-                break;
-            }
-        }
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedPrice, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
     }
 }
 

@@ -117,6 +117,7 @@ public:
     void OnClickBtnEntryDecrease();
     void OnClickBtnStopLossIncrease();
     void OnClickBtnStopLossDecrease();
+    void OnEndEditEdtEntryLevel();
 
 private:
 
@@ -144,7 +145,6 @@ private:
     bool             CreateOutsideButton(CButton& Btn, int X1, int Y1, int X2, int Y2, string Name, string Text, string Tooltip = "\n");
 
     // Event handlers
-    void OnEndEditEdtEntryLevel();
     void OnEndEditEdtSL();
     void OnEndEditEdtTP();
     void OnClickBtnTakeProfitIncrease();
