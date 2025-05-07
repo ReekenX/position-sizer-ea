@@ -148,7 +148,7 @@ input string SetEntryHotKey = "E"; // SetEntryHotKey: Set Entry to where mouse p
 input string MinimizeMaximizeHotkey = "`"; // MinimizeMaximizeHotkey: Minimize/maximize the panel.
 input string SwitchSLPointsLevelHotKey = "Shift+S"; // SwitchSLPointsLevelHotKey: Switch SL between points and level.
 input string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
-input string SetTPGoalHotKey = "G"; // SetTPGoalHotKey: Set TP to this equity.
+input string SetTPGoalHotKey = "Shift+G"; // SetTPGoalHotKey: Set TP to this equity.
 input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Set Entry with 20% pullback.
 input group "Miscellaneous"
 input double TP_Multiplier = 1; // TP Multiplier for SL value, appears in Take-profit button.
