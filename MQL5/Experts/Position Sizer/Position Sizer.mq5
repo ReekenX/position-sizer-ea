@@ -734,7 +734,7 @@ void DoAutoCorrectTp()
         ExtDialog.OnClickBtnTakeProfitsNumberAdd();
         ExtDialog.RefreshValues();
 
-        if (CustomEquityGoal < sets.TakeProfitLevel) {
+        if (CustomEquityGoal < sets.TPLinePrice) {
             break;
         }
     }
@@ -749,7 +749,7 @@ void DoAutoCorrectTp()
         ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
         ExtDialog.RefreshValues();
 
-        if (CustomEquityGoal < sets.TakeProfitLevel) {
+        if (CustomEquityGoal < sets.TPLinePrice) {
             break;
         }
     }

@@ -6817,6 +6817,7 @@ void RecalculatePositionSize()
                 label_text = FormatDouble(DoubleToString(MainOutputReward + AccountInfoDouble(ACCOUNT_BALANCE), AccountCurrencyDigits)) + " " + AccountCurrency;
                 // When multiple TPs are used, append correct lot volume for each TP at the beginning of the additional TP label:
                 if (sets.TakeProfitsNumber > 1) label_text = FormatDouble(DoubleToString(ArrayPositionSize[0], LotStep_digits), LotStep_digits) + " Lots " + label_text;
+                sets.TPLinePrice = MainOutputReward + AccountInfoDouble(ACCOUNT_BALANCE);
             }
             else
             {
@@ -6846,6 +6847,7 @@ void RecalculatePositionSize()
                 else perc_risk = "100";
                 label_text = FormatDouble(DoubleToString(ArrayPositionSize[i], LotStep_digits), LotStep_digits) + " Lots " + perc_risk + "% (" + FormatDouble(DoubleToString(AdditionalOutputReward[i - 1], AccountCurrencyDigits)) + " " + AccountCurrency + ") " + AdditionalOutputRR[i - 1] + "R";
                 label_text = FormatDouble(DoubleToString(MainOutputReward + AccountInfoDouble(ACCOUNT_BALANCE), AccountCurrencyDigits)) + " " + AccountCurrency;
+                sets.TPLinePrice = MainOutputReward + AccountInfoDouble(ACCOUNT_BALANCE);
             }
             else
             {
@@ -7044,6 +7046,7 @@ void CalculateRiskAndPositionSize()
         if (sets.TakeProfitsNumber > 1) PS_Multiplier = (double)sets.TPShare[0] / 100.0; // Use respective position size share.
 
         MainOutputReward = Round((MathAbs((tTakeProfitLevel - tEntryLevel) * UnitCost_reward / TickSize) - 2 * commission) * ArrayPositionSize[0], AccountCurrencyDigits, RoundDown);
+        sets.TPLinePrice = MainOutputReward + AccountInfoDouble(ACCOUNT_BALANCE);
 
         // For zero share, just ignore this level.
         if  ((PS_Multiplier == 0) || (ArrayPositionSize[0] == 0))
