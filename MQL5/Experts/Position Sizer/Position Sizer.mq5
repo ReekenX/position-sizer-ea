@@ -664,9 +664,9 @@ void OnTick()
 {
     ExtDialog.RefreshValues();
 
-    DoAutoTrade();
+    // DoAutoTrade();
 
-    DoFetchWebCommands();
+    // DoFetchWebCommands();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
