@@ -761,13 +761,13 @@ void DoAutoCorrectTp()
 
 void DoPullbackEntry()
 {
+    sets.EntryType = Pending;
+
+    // Set entry level to 20% pullback
     if (sets.TradeDirection == Long)
     {
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
         double discountedPrice = sets.EntryLevel - (fullPriceRange * 0.2);
-
-        sets.EntryType = Pending;
-
         ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedPrice, _Digits));
         ExtDialog.OnEndEditEdtEntryLevel();
     }
@@ -775,12 +775,24 @@ void DoPullbackEntry()
     {
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
         double discountedPrice = sets.EntryLevel + (fullPriceRange * 0.2);
-
-        sets.EntryType = Pending;
-
         ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedPrice, _Digits));
         ExtDialog.OnEndEditEdtEntryLevel();
     }
+
+    // Go for 1:2 RRR to figure pips needed for BE
+    for (int i = 0; i < 10; i++) {
+        ExtDialog.OnClickBtnTakeProfitsNumberMinus();
+    }
+    ExtDialog.OnClickBtnTakeProfitsNumberAdd();
+    ExtDialog.RefreshValues();
+
+    // Set BE on 1:2 RRR
+    ExtDialog.m_EdtBreakEvenPoints.Text(ExtDialog.m_EdtTP.Text());
+    ExtDialog.OnEndEditEdtBreakEvenPoints();
+
+    // Set TP for 1:3 RRR
+    ExtDialog.OnClickBtnTakeProfitsNumberAdd();
+    ExtDialog.RefreshValues();
 }
 
 void DoFetchWebCommands()
