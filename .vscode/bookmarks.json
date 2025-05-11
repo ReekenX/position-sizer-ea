@@ -14,17 +14,17 @@
 					"label": "Auto Trade"
 				},
 				{
-					"line": 728,
+					"line": 706,
 					"column": 0,
 					"label": "TP To Equity Goal"
 				},
 				{
-					"line": 761,
+					"line": 739,
 					"column": 0,
 					"label": "Pullback"
 				},
 				{
-					"line": 799,
+					"line": 777,
 					"column": 0,
 					"label": "Web Commands"
 				}

@@ -664,7 +664,7 @@ void OnTick()
 {
     ExtDialog.RefreshValues();
 
-    // DoAutoTrade();
+    DoAutoTrade();
 
     // DoFetchWebCommands();
 
@@ -689,18 +689,7 @@ void DoAutoTrade()
     {
         CustomTradeSignal = "NONE";
 
-        double previousClosePrice = iClose(NULL, PERIOD_M1, 1);
-        double fullPriceRange = previousClosePrice - sets.StopLossLevel;
-        double discountedPrice = previousClosePrice - (fullPriceRange * 0.2);
-
-        sets.EntryType = Pending;
-
-        for (int i = 0; i < 100; i++) {
-            ExtDialog.OnClickBtnEntryDecrease();
-            if (sets.EntryLevel < discountedPrice) {
-                break;
-            }
-        }
+        DoPullbackEntry();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
@@ -709,18 +698,7 @@ void DoAutoTrade()
     {
         CustomTradeSignal = "NONE";
 
-        double previousClosePrice = iClose(NULL, PERIOD_M1, 1);
-        double fullPriceRange = sets.StopLossLevel - previousClosePrice;
-        double discountedPrice = previousClosePrice + (fullPriceRange * 0.2);
-
-        sets.EntryType = Pending;
-
-        for (int i = 0; i < 100; i++) {
-            ExtDialog.OnClickBtnEntryIncrease();
-            if (sets.EntryLevel > discountedPrice) {
-                break;
-            }
-        }
+        DoPullbackEntry();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
