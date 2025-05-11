@@ -726,7 +726,7 @@ void DoAutoTrade()
     }
 }
 
-void DoAutoCorrectTp()
+void DoSetTPToEquityGoal()
 {
     // Find maximum major multiplier (eg. 1:3 RRR, 1:4 RRR, etc)
     CustomTPMultiplier = 0;
@@ -761,22 +761,24 @@ void DoAutoCorrectTp()
 
 void DoPullbackEntry()
 {
-    sets.EntryType = Pending;
+    sets.EntryType = Instant;
 
-    // Set entry level to 20% pullback
+    // Make safe SL 20% smaller
     if (sets.TradeDirection == Long)
     {
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
-        double discountedPrice = sets.EntryLevel - (fullPriceRange * 0.2);
-        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedPrice, _Digits));
-        ExtDialog.OnEndEditEdtEntryLevel();
+        double smallerSLPrice = sets.StopLossLevel + (fullPriceRange * 0.2);
+
+        ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
+        ExtDialog.OnEndEditEdtSL();
     }
     else if (sets.TradeDirection == Short)
     {
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
-        double discountedPrice = sets.EntryLevel + (fullPriceRange * 0.2);
-        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedPrice, _Digits));
-        ExtDialog.OnEndEditEdtEntryLevel();
+        double smallerSLPrice = sets.StopLossLevel - (fullPriceRange * 0.2);
+
+        ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
+        ExtDialog.OnEndEditEdtSL();
     }
 
     // Go for 1:2 RRR to figure pips needed for BE
@@ -1179,7 +1181,7 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetTPGoalHotKey != 0) && (lparam == MainKey_SetTPGoalHotKey))
         {
-            DoAutoCorrectTp();
+            DoSetTPToEquityGoal();
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_SetAdjustEntryHotKey))
         {

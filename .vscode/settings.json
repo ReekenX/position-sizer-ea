@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "*.mqh": "cpp"
+        "*.mqh": "cpp",
+        "*.mq5": "cpp"
     },
     "files.exclude": {
         "MQL4/": true

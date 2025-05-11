@@ -16,7 +16,7 @@
 				{
 					"line": 728,
 					"column": 0,
-					"label": "TP Goal"
+					"label": "TP To Equity Goal"
 				},
 				{
 					"line": 761,
@@ -24,7 +24,7 @@
 					"label": "Pullback"
 				},
 				{
-					"line": 797,
+					"line": 799,
 					"column": 0,
 					"label": "Web Commands"
 				}
