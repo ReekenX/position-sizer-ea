@@ -691,6 +691,8 @@ void DoAutoTrade()
 
         DoPullbackEntry();
 
+        Trade();
+
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
 
@@ -699,6 +701,8 @@ void DoAutoTrade()
         CustomTradeSignal = "NONE";
 
         DoPullbackEntry();
+
+        Trade();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
     }
