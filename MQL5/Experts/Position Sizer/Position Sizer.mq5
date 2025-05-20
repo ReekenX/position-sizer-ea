@@ -779,6 +779,39 @@ void DoPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
+void DoPendingPullbackEntry()
+{
+    sets.EntryType = Pending;
+
+    // Make safe SL 20% smaller
+    if (sets.TradeDirection == Long)
+    {
+        double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
+        double smallerSLPrice = sets.StopLossLevel + (fullPriceRange * 0.2);
+
+        ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
+        ExtDialog.OnEndEditEdtSL();
+    }
+    else if (sets.TradeDirection == Short)
+    {
+        double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
+        double smallerSLPrice = sets.StopLossLevel - (fullPriceRange * 0.2);
+
+        ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
+        ExtDialog.OnEndEditEdtSL();
+    }
+
+    // Go for 1R back and use that to set BE level
+    ExtDialog.OnClickBtnTakeProfitsNumberMinus();
+    ExtDialog.RefreshValues();
+    ExtDialog.m_EdtBreakEvenPoints.Text(ExtDialog.m_EdtTP.Text());
+    ExtDialog.OnEndEditEdtBreakEvenPoints();
+
+    // Set TP for initial idea
+    ExtDialog.OnClickBtnTakeProfitsNumberAdd();
+    ExtDialog.RefreshValues();
+}
+
 void DoFetchWebCommands()
 {
     if (CustomWebRequestInProgress) return;
@@ -1167,7 +1200,7 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_SetAdjustEntryHotKey))
         {
-            DoPullbackEntry();
+            DoPendingPullbackEntry();
         }
     }
 
