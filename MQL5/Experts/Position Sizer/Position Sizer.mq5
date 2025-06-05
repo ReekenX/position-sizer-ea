@@ -689,7 +689,7 @@ void DoAutoTrade()
     {
         CustomTradeSignal = "NONE";
 
-        DoPullbackEntry();
+        DoMax5PipsEntry();
 
         Trade();
 
@@ -700,7 +700,7 @@ void DoAutoTrade()
     {
         CustomTradeSignal = "NONE";
 
-        DoPullbackEntry();
+        DoMax5PipsEntry();
 
         Trade();
 
@@ -741,7 +741,27 @@ void DoSetTPToEquityGoal()
     ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
 }
 
-void DoPullbackEntry()
+void DoMax5PipsEntry()
+{
+    // Check if SL is bigger than 50 ticks
+    double fullPriceRange = MathAbs(sets.EntryLevel - sets.StopLossLevel);
+    if (fullPriceRange / _Point < 50) {
+        Print("SL is smaller than 50 ticks, nothing to adjust ", fullPriceRange / _Point);
+        return;
+    }
+
+    Print("SL is bigger than 50 ticks ", fullPriceRange / _Point);
+
+    // Set max 5 pips SL
+    if (sets.TradeDirection == Long) {
+        ExtDialog.m_EdtSL.Text(DoubleToString(sets.EntryLevel - (50 * _Point), _Digits));
+    } else {
+        ExtDialog.m_EdtSL.Text(DoubleToString(sets.EntryLevel + (50 * _Point), _Digits));
+    }
+    ExtDialog.OnEndEditEdtSL();
+}
+
+void Do80PercentPullbackEntry()
 {
     sets.EntryType = Instant;
 
@@ -1200,7 +1220,7 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_SetAdjustEntryHotKey))
         {
-            DoPendingPullbackEntry();
+            DoMax5PipsEntry();
         }
     }
 
