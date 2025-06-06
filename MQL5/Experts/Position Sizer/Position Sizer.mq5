@@ -759,6 +759,7 @@ void DoMax5PipsEntry()
         ExtDialog.m_EdtSL.Text(DoubleToString(sets.EntryLevel + (50 * _Point), _Digits));
     }
     ExtDialog.OnEndEditEdtSL();
+    ExtDialog.RefreshValues();
 }
 
 void Do80PercentPullbackEntry()
