@@ -35,7 +35,7 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double CustomTPMultiplier = 1;
+double CustomTPMultiplier = 3;
 string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
@@ -689,7 +689,7 @@ void DoAutoTrade()
     {
         CustomTradeSignal = "NONE";
 
-        DoMax5PipsEntry();
+        DoSafe5PipsEntry();
 
         Trade();
 
@@ -700,7 +700,7 @@ void DoAutoTrade()
     {
         CustomTradeSignal = "NONE";
 
-        DoMax5PipsEntry();
+        DoSafe5PipsEntry();
 
         Trade();
 
@@ -759,6 +759,29 @@ void DoMax5PipsEntry()
         ExtDialog.m_EdtSL.Text(DoubleToString(sets.EntryLevel + (50 * _Point), _Digits));
     }
     ExtDialog.OnEndEditEdtSL();
+    ExtDialog.RefreshValues();
+}
+
+void DoSafe5PipsEntry()
+{
+    // Check if SL is bigger than 50 ticks
+    double fullPriceRange = MathAbs(sets.EntryLevel - sets.StopLossLevel);
+    if (fullPriceRange / _Point < 50) {
+        Print("Will make market order as SL is smaller than 50 ticks: ", fullPriceRange / _Point);
+        return;
+    }
+
+    Print("Will make limit order as SL is bigger than 50 ticks: ", fullPriceRange / _Point);
+
+    sets.EntryType = Pending;
+
+    // Set max 5 pips SL
+    if (sets.TradeDirection == Long) {
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(sets.StopLossLevel + (50 * _Point), _Digits));
+    } else {
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(sets.StopLossLevel - (50 * _Point), _Digits));
+    }
+    ExtDialog.OnEndEditEdtEntryLevel();
     ExtDialog.RefreshValues();
 }
 
@@ -1221,7 +1244,7 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_SetAdjustEntryHotKey))
         {
-            DoMax5PipsEntry();
+            DoSafe5PipsEntry();
         }
     }
 
