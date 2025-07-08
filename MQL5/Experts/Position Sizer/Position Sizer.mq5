@@ -150,6 +150,7 @@ input string SwitchSLPointsLevelHotKey = "Shift+S"; // SwitchSLPointsLevelHotKey
 input string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
 input string SetTPGoalHotKey = "Shift+G"; // SetTPGoalHotKey: Set TP to this equity.
 input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Set Entry with 20% pullback.
+input string FindClosestSLHotKey = "Shift+O"; // FindClosestSLHotKey: Match SL to the closest high/low.
 input group "Miscellaneous"
 input double TP_Multiplier = 1; // TP Multiplier for SL value, appears in Take-profit button.
 input bool UseCommissionToSetTPDistance = false; // UseCommissionToSetTPDistance: For TP button.
@@ -188,9 +189,9 @@ uint LastRecalculationTime = 0;
 bool StopLossLineIsBeingMoved = false;
 bool TakeProfitLineIsBeingMoved[]; // Separate for each TP.
 uchar MainKey_TradeHotKey = 0, MainKey_SwitchOrderTypeHotKey = 0, MainKey_SwitchEntryDirectionHotKey = 0, MainKey_SwitchHideShowLinesHotKey = 0, MainKey_SetStopLossHotKey = 0, MainKey_SetTakeProfitHotKey = 0, MainKey_SetEntryHotKey = 0, MainKey_MinimizeMaximizeHotkey = 0, MainKey_SwitchSLPointsLevelHotKey = 0, MainKey_SwitchTPPointsLevelHotKey = 0;
-uchar MainKey_SetTPGoalHotKey = 0, MainKey_SetAdjustEntryHotKey = 0;
-bool CtrlRequired_TradeHotKey = false, CtrlRequired_SwitchOrderTypeHotKey = false, CtrlRequired_SwitchEntryDirectionHotKey = false, CtrlRequired_SwitchHideShowLinesHotKey = false, CtrlRequired_SetStopLossHotKey = false, CtrlRequired_SetTakeProfitHotKey = false, CtrlRequired_SetEntryHotKey = false, CtrlRequired_MinimizeMaximizeHotkey = false, CtrlRequired_SwitchSLPointsLevelHotKey = false, CtrlRequired_SwitchTPPointsLevelHotKey = false, CtrlRequired_SetTPGoalHotKey = false, CtrlRequired_SetAdjustEntryHotKey = false;
-bool ShiftRequired_TradeHotKey = false, ShiftRequired_SwitchOrderTypeHotKey = false, ShiftRequired_SwitchEntryDirectionHotKey = false, ShiftRequired_SwitchHideShowLinesHotKey = false, ShiftRequired_SetStopLossHotKey = false, ShiftRequired_SetTakeProfitHotKey = false, ShiftRequired_SetEntryHotKey = false, ShiftRequired_MinimizeMaximizeHotkey = false, ShiftRequired_SwitchSLPointsLevelHotKey = false, ShiftRequired_SwitchTPPointsLevelHotKey = false, ShiftRequired_SetTPGoalHotKey = false, ShiftRequired_SetAdjustEntryHotKey = false;
+uchar MainKey_SetTPGoalHotKey = 0, MainKey_SetAdjustEntryHotKey = 0, MainKey_FindClosestSLHotKey = 0;
+bool CtrlRequired_TradeHotKey = false, CtrlRequired_SwitchOrderTypeHotKey = false, CtrlRequired_SwitchEntryDirectionHotKey = false, CtrlRequired_SwitchHideShowLinesHotKey = false, CtrlRequired_SetStopLossHotKey = false, CtrlRequired_SetTakeProfitHotKey = false, CtrlRequired_SetEntryHotKey = false, CtrlRequired_MinimizeMaximizeHotkey = false, CtrlRequired_SwitchSLPointsLevelHotKey = false, CtrlRequired_SwitchTPPointsLevelHotKey = false, CtrlRequired_SetTPGoalHotKey = false, CtrlRequired_SetAdjustEntryHotKey = false, CtrlRequired_FindClosestSLHotKey = false;
+bool ShiftRequired_TradeHotKey = false, ShiftRequired_SwitchOrderTypeHotKey = false, ShiftRequired_SwitchEntryDirectionHotKey = false, ShiftRequired_SwitchHideShowLinesHotKey = false, ShiftRequired_SetStopLossHotKey = false, ShiftRequired_SetTakeProfitHotKey = false, ShiftRequired_SetEntryHotKey = false, ShiftRequired_MinimizeMaximizeHotkey = false, ShiftRequired_SwitchSLPointsLevelHotKey = false, ShiftRequired_SwitchTPPointsLevelHotKey = false, ShiftRequired_SetTPGoalHotKey = false, ShiftRequired_SetAdjustEntryHotKey = false, ShiftRequired_FindClosestSLHotKey = false;
 bool AdditionalTPLineMoved = false;
 int DeinitializationReason = -1;
 string OldSymbol = "";
@@ -434,6 +435,7 @@ int OnInit()
 
         DissectHotKeyCombination(SetTPGoalHotKey, ShiftRequired_SetTPGoalHotKey, CtrlRequired_SetTPGoalHotKey, MainKey_SetTPGoalHotKey);
         DissectHotKeyCombination(SetAdjustEntryHotKey, ShiftRequired_SetAdjustEntryHotKey, CtrlRequired_SetAdjustEntryHotKey, MainKey_SetAdjustEntryHotKey);
+        DissectHotKeyCombination(FindClosestSLHotKey, ShiftRequired_FindClosestSLHotKey, CtrlRequired_FindClosestSLHotKey, MainKey_FindClosestSLHotKey);
     }
     else if (OldSymbol != _Symbol)
     {
@@ -783,6 +785,12 @@ void DoSafe5PipsEntry()
     }
     ExtDialog.OnEndEditEdtEntryLevel();
     ExtDialog.RefreshValues();
+}
+
+void DoFindClosestSL()
+{
+    // TODO
+    Print("FindClosestSL");
 }
 
 void Do80PercentPullbackEntry()
@@ -1245,6 +1253,10 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_SetAdjustEntryHotKey))
         {
             DoSafe5PipsEntry();
+        }
+        else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
+        {
+            DoFindClosestSL();
         }
     }
 
