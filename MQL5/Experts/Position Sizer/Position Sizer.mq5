@@ -789,8 +789,16 @@ void DoSafe5PipsEntry()
 
 void DoFindClosestSL()
 {
-    // TODO
-    Print("FindClosestSL");
+    for (int i = 0; i < 10; i++) {
+        double buyTop = iHigh(NULL, PERIOD_M1, i);
+        if (sets.StopLossLevel > buyTop) {
+            Print("buyTop: ", i, " Diff ", MathAbs(sets.StopLossLevel - buyTop));
+        }
+        // if (sets.TradeDirection == Long && MathAbs(StringToDouble(ExtDialog.m_EdtEntryLevel.Text()) - buyTop) < 10 * _Point) {
+        //     Print("Found buy top: ", buyTop);
+        //     return;
+        // }
+    }
 }
 
 void Do80PercentPullbackEntry()
