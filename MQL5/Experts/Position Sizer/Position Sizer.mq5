@@ -720,7 +720,7 @@ void DoSetTPToEquityGoal()
 {
     // Find maximum major multiplier (eg. 1:3 RRR, 1:4 RRR, etc)
     CustomTPMultiplier = 0;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 30; i++) {
         ExtDialog.OnClickBtnTakeProfitsNumberAdd();
         ExtDialog.RefreshValues();
 
@@ -735,7 +735,7 @@ void DoSetTPToEquityGoal()
 
     // Figure out the minimum minor multiplier needed to
     // reach the target equity goal (eg. 1:3.1 RRR, 1:3.2 RRR, etc)
-    for (int i = 1; i < 10; i++) {
+    for (int i = 1; i < 30; i++) {
         ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
         ExtDialog.RefreshValues();
 
