@@ -2087,8 +2087,18 @@ void CPositionSizeCalculator::CalculateSettingsBasedOnLines()
 
     sets.CustomLeverage = StringToDouble(m_EdtCustomLeverage.Text());
 
-    if (sets.EntryLevel < sets.StopLossLevel) sets.TradeDirection = Short;
-    else if (sets.EntryLevel > sets.StopLossLevel) sets.TradeDirection = Long;
+    if (sets.EntryLevel < sets.StopLossLevel) {
+        if (sets.TradeDirection != Short) {
+            DoCancelAutoTrade();
+        }
+        sets.TradeDirection = Short;
+    }
+    else if (sets.EntryLevel > sets.StopLossLevel) {
+        if (sets.TradeDirection != Long) {
+            DoCancelAutoTrade();
+        }
+        sets.TradeDirection = Long;
+    }
 
     if (sets.TradeDirection == Short) PanelCaption = "\x25BC " + PanelCaptionBase;
     else PanelCaption = "\x25B2 " + PanelCaptionBase;

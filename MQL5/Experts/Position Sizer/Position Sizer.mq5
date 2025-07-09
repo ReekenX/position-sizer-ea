@@ -673,6 +673,12 @@ void OnTick()
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
 
+void DoCancelAutoTrade()
+{
+    CustomTradeSignal = "NONE";
+    ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+}
+
 void DoAutoTrade()
 {
     // No trade signal, so we don't need to trade
