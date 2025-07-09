@@ -787,17 +787,54 @@ void DoSafe5PipsEntry()
     ExtDialog.RefreshValues();
 }
 
-void DoFindClosestSL()
+void DoSnapSL()
 {
-    for (int i = 0; i < 10; i++) {
-        double buyTop = iHigh(NULL, PERIOD_M1, i);
-        if (sets.StopLossLevel > buyTop) {
-            Print("buyTop: ", i, " Diff ", MathAbs(sets.StopLossLevel - buyTop));
+    if (sets.TradeDirection == Long) {
+        double newSL = -1;
+        double minDiff = 999999999;
+        for (int i = 1; i < 180; i++) {
+            // Check if current SL is above the tested bar
+            if (iLow(NULL, PERIOD_M1, i) <= sets.StopLossLevel) {
+                continue;
+            }
+
+            // Check distance between current SL and tested bar low
+            double diff = MathAbs((iLow(NULL, PERIOD_M1, i) - sets.StopLossLevel) / _Point);
+            if (diff < minDiff) {
+                minDiff = diff;
+                newSL = iLow(NULL, PERIOD_M1, i);
+            }
         }
-        // if (sets.TradeDirection == Long && MathAbs(StringToDouble(ExtDialog.m_EdtEntryLevel.Text()) - buyTop) < 10 * _Point) {
-        //     Print("Found buy top: ", buyTop);
-        //     return;
-        // }
+
+        // Update SL to the closest low
+        if (newSL != -1) {
+            ExtDialog.m_EdtSL.Text(DoubleToString(newSL, _Digits));
+            ExtDialog.OnEndEditEdtSL();
+        }
+    }
+
+    if (sets.TradeDirection == Short) {
+        double newSL = -1;
+        double minDiff = 999999999;
+        for (int i = 1; i < 180; i++) {
+            // Check if current SL is above the tested bar
+            if (sets.StopLossLevel <= iHigh(NULL, PERIOD_M1, i)) {
+                continue;
+            }
+
+            // Check distance between current SL and tested bar high
+            double diff = MathAbs((sets.StopLossLevel - iHigh(NULL, PERIOD_M1, i)) / _Point);
+            if (diff < minDiff) {
+                minDiff = diff;
+                newSL = iHigh(NULL, PERIOD_M1, i);
+            }
+        }
+
+        // Update SL to the closest high
+        if (newSL != -1) {
+            ExtDialog.m_EdtSL.Text(DoubleToString(newSL, _Digits));
+            ExtDialog.OnEndEditEdtSL();
+        }
     }
 }
 
@@ -1155,6 +1192,7 @@ void OnChartEvent(const int id,
                 ObjectSetDouble(ChartID(), ObjectPrefix + "StopLossLine", OBJPROP_PRICE, price);
                 if ((sets.SLDistanceInPoints) || (ShowATROptions)) ExtDialog.UpdateFixedSL();
                 ExtDialog.RefreshValues();
+                DoSnapSL();
             }
         }
         // Set take-profit:
@@ -1264,7 +1302,7 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
-            DoFindClosestSL();
+            DoSnapSL();
         }
     }
 
