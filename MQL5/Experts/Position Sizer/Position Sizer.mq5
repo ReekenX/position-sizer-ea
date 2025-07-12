@@ -668,6 +668,8 @@ void OnTick()
 
     DoAutoTrade();
 
+    DoCloseAllOnEquityReach();
+
     // DoFetchWebCommands();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();

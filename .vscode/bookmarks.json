@@ -9,22 +9,22 @@
 					"label": "Variables"
 				},
 				{
-					"line": 673,
+					"line": 684,
 					"column": 0,
 					"label": "Auto Trade"
 				},
 				{
-					"line": 710,
+					"line": 721,
 					"column": 0,
 					"label": "TP To Equity Goal"
 				},
 				{
-					"line": 743,
+					"line": 775,
 					"column": 0,
-					"label": "Pullback"
+					"label": "Strategy"
 				},
 				{
-					"line": 781,
+					"line": 920,
 					"column": 0,
 					"label": "Web Commands"
 				}
