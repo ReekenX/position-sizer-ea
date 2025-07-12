@@ -994,6 +994,25 @@ void DoCloseAllOnEquityReach()
     m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
 }
 
+void DoScaling()
+{
+    sets.EntryType = Pending;
+    double prevEntryLevel = sets.EntryLevel;
+
+    if (sets.TradeDirection == Long) {
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(sets.EntryLevel + MathAbs(sets.EntryLevel - sets.StopLossLevel), _Digits));
+    }
+    if (sets.TradeDirection == Short) {
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(sets.EntryLevel - MathAbs(sets.StopLossLevel - sets.EntryLevel), _Digits));
+    }
+    ExtDialog.OnEndEditEdtEntryLevel();
+
+    ExtDialog.m_EdtSL.Text(DoubleToString(prevEntryLevel, _Digits));
+    ExtDialog.OnEndEditEdtSL();
+
+    ExtDialog.RefreshValues();
+}
+
 void OnChartEvent(const int id,
                   const long &lparam,
                   const double &dparam,
@@ -1323,7 +1342,7 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
-            DoSnapSL();
+            DoScaling();
         }
     }
 
