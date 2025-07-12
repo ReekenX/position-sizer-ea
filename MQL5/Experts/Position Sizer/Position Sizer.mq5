@@ -979,6 +979,19 @@ void DoFetchWebCommands()
     CustomWebRequestInProgress = false;
 }
 
+void DoCloseAllOnEquityReach()
+{
+    if (AccountInfoDouble(ACCOUNT_EQUITY) < CustomEquityGoal) return;
+
+    int total = PositionsTotal();
+    if (total == 0) return;
+
+    PositionSelect(PositionGetSymbol(0));
+
+    CTrade m_trade;
+    m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
+}
+
 void OnChartEvent(const int id,
                   const long &lparam,
                   const double &dparam,
