@@ -758,7 +758,7 @@ void DoMax5PipsEntry()
         return;
     }
 
-    Print("SL is bigger than 50 ticks ", fullPriceRange / _Point);
+    Print("SL is bigger than 50 ticks: ", fullPriceRange / _Point);
 
     // Set max 5 pips SL
     if (sets.TradeDirection == Long) {
