@@ -41,7 +41,6 @@ datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 bool CustomWebRequestInProgress = false;
-double ScaleAtPrice = 0; // Scale position when this price is reached
 double CancelAtPrice = 0; // Cancel position when this price is reached
 
 input group "Compactness"
@@ -670,9 +669,9 @@ void OnTick()
 
     DoAutoTrade();
 
-    DoStarTrackingForAutoScaling();
+    DoAutoCancelScale();
 
-    DoAutoScaling();
+    DoUpdateScalingSL();
 
     DoCloseAllOnEquityReach();
 
@@ -711,8 +710,7 @@ void DoAutoTrade()
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-        ScaleAtPrice = 0;
-        CancelAtPrice = 0;
+        CancelAtPrice = sets.StopLossLevel;
     }
 
     if (CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar)
@@ -725,46 +723,14 @@ void DoAutoTrade()
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-        ScaleAtPrice = 0;
-        CancelAtPrice = 0;
+        CancelAtPrice = sets.StopLossLevel;
     }
 }
 
-void DoStarTrackingForAutoScaling()
+void DoAutoCancelScale()
 {
-    // Don't do anything if scaling prices were already set
-    // NOTE: Do not change this to ||, it will cause the position to be scaled multiple times
-    if (ScaleAtPrice != 0 && CancelAtPrice != 0) return;
-
-    // If there are no orders, then there is nothing to track
-    if (PositionsTotal() != 1) return;
-    
-    // Get first order
-    if (!PositionSelect(PositionGetSymbol(0))) return;
-    
-    double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-    double slPrice = PositionGetDouble(POSITION_SL);
-    ENUM_POSITION_TYPE positionType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-    CancelAtPrice = slPrice;
-    double priceDifference = MathAbs(entryPrice - slPrice);
-    
-    // Set the price at which the position should be scaled
-    if (positionType == POSITION_TYPE_BUY)
-    {
-        ScaleAtPrice = entryPrice + priceDifference;
-    }
-    else if (positionType == POSITION_TYPE_SELL)
-    {
-        ScaleAtPrice = entryPrice - priceDifference;
-    }
-
-    Print("Trade will be scaled at: ", ScaleAtPrice, " and canceled at: ", CancelAtPrice);
-}
-
-void DoAutoScaling()
-{
-    // Don't do anything if scaling prices were cleared out
-    if (ScaleAtPrice == 0) return;
+    // Don't do anything if cancel price is not set
+    if (CancelAtPrice == 0) return;
     
     // If there are no orders, then there is nothing to scale
     if (PositionsTotal() != 1) return;
@@ -783,19 +749,26 @@ void DoAutoScaling()
         if (currentPrice <= CancelAtPrice)
         {
             Print("Reached cancel price for scaling idea: ", CancelAtPrice);
-            ScaleAtPrice = 0;
-            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
-            return;
-        }
-        
-        // Reached scale price, scale the position
-        if (currentPrice >= ScaleAtPrice)
-        {
-            Print("Reached scale price : ", ScaleAtPrice);
-            ScaleAtPrice = 0;
-            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
-            DoScaling();
-            Trade();
+
+            // Find and remove all pending orders
+            int totalOrders = OrdersTotal();
+            for (int i = totalOrders - 1; i >= 0; i--)
+            {
+                // if (OrderSelect(i, SELECT_BY_INDEX, MODE_TRADES))
+                // {
+                //     if (OrderType() == ORDER_BUY_LIMIT || OrderType() == ORDER_SELL_LIMIT ||
+                //         OrderType() == ORDER_BUY_STOP  || OrderType() == ORDER_SELL_STOP ||
+                //         OrderType() == ORDER_BUY_STOP_LIMIT || OrderType() == ORDER_SELL_STOP_LIMIT)
+                //     {
+                //         ulong ticket = OrderTicket();
+                //         CTrade trade;
+                //         trade.OrderDelete(ticket);
+                //         Print("Deleted pending order: ", ticket);
+                //     }
+                // }
+            }
+
+            CancelAtPrice = 0;
         }
     }
     else if (positionType == POSITION_TYPE_SELL)
@@ -806,21 +779,31 @@ void DoAutoScaling()
         if (currentPrice >= CancelAtPrice)
         {
             Print("Reached cancel price for scaling idea: ", CancelAtPrice);
-            ScaleAtPrice = 0;
-            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
-            return;
-        }
-        
-        // Reached scale price, scale the position
-        if (currentPrice <= ScaleAtPrice)
-        {
-            Print("Reached scale price: ", ScaleAtPrice);
-            ScaleAtPrice = 0;
-            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
-            DoScaling();
-            Trade();
+
+            // Find and remove all pending orders
+            int totalOrders = OrdersTotal();
+            for (int i = totalOrders - 1; i >= 0; i--)
+            {
+                // if (OrderSelect(i, SELECT_BY_INDEX, MODE_TRADES))
+                // {
+                //     if (OrderType() == ORDER_BUY_LIMIT || OrderType() == ORDER_SELL_LIMIT ||
+                //         OrderType() == ORDER_BUY_STOP  || OrderType() == ORDER_SELL_STOP ||
+                //         OrderType() == ORDER_BUY_STOP_LIMIT || OrderType() == ORDER_SELL_STOP_LIMIT)
+                //     {
+                //         ulong ticket = OrderTicket();
+                //         CTrade trade;
+                //         trade.OrderDelete(ticket);
+                //         Print("Deleted pending order: ", ticket);
+                //     }
+                // }
+            }
+            CancelAtPrice = 0;
         }
     }
+}
+
+void DoUpdateScalingSL() {
+    // TODO
 }
 
 void DoSetTPToEquityGoal()
