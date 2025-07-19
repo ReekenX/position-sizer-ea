@@ -733,7 +733,8 @@ void DoAutoTrade()
 void DoStarTrackingForAutoScaling()
 {
     // Don't do anything if scaling prices were already set
-    if (ScaleAtPrice != 0 || CancelAtPrice != 0) return;
+    // NOTE: Do not change this to ||, it will cause the position to be scaled multiple times
+    if (ScaleAtPrice != 0 && CancelAtPrice != 0) return;
 
     // If there are no orders, then there is nothing to track
     if (PositionsTotal() != 1) return;
@@ -761,7 +762,7 @@ void DoStarTrackingForAutoScaling()
 void DoAutoScaling()
 {
     // Don't do anything if scaling prices were cleared out
-    if (ScaleAtPrice == 0 || CancelAtPrice == 0) return;
+    if (ScaleAtPrice == 0) return;
     
     // If there are no orders, then there is nothing to scale
     if (PositionsTotal() != 1) return;
@@ -777,11 +778,11 @@ void DoAutoScaling()
         currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
         
         // Reached cancel price, terminate the idea to scale
-        if (currentPrice < CancelAtPrice)
+        if (currentPrice <= CancelAtPrice)
         {
             Print("Reached cancel price for scaling idea: ", CancelAtPrice);
             ScaleAtPrice = 0;
-            CancelAtPrice = 0;
+            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
             return;
         }
         
@@ -790,7 +791,7 @@ void DoAutoScaling()
         {
             Print("Reached scale price : ", ScaleAtPrice);
             ScaleAtPrice = 0;
-            CancelAtPrice = 0;
+            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
             DoScaling();
             Trade();
         }
@@ -800,11 +801,11 @@ void DoAutoScaling()
         currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
         
         // Reached cancel price, terminate the idea to scale
-        if (currentPrice > CancelAtPrice)
+        if (currentPrice >= CancelAtPrice)
         {
             Print("Reached cancel price for scaling idea: ", CancelAtPrice);
             ScaleAtPrice = 0;
-            CancelAtPrice = 0;
+            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
             return;
         }
         
@@ -813,7 +814,7 @@ void DoAutoScaling()
         {
             Print("Reached scale price: ", ScaleAtPrice);
             ScaleAtPrice = 0;
-            CancelAtPrice = 0;
+            // CancelAtPrice = 0; // Do not enable, this ensures that the position is scaled only once
             DoScaling();
             Trade();
         }
