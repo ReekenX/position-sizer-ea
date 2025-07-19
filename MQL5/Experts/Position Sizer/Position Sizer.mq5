@@ -41,6 +41,7 @@ datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 bool CustomWebRequestInProgress = false;
+bool PositionScaled = false;
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -704,6 +705,8 @@ void DoAutoTrade()
         Trade();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+
+        PositionScaled = false;
     }
 
     if (CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar)
@@ -715,6 +718,8 @@ void DoAutoTrade()
         Trade();
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+
+        PositionScaled = false;
     }
 }
 
