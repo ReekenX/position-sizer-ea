@@ -41,7 +41,8 @@ datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 bool CustomWebRequestInProgress = false;
-bool PositionScaled = false;
+double ScaleAtPrice = 0; // Scale position when this price is reached
+double CancelAtPrice = 0; // Cancel position when this price is reached
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -669,6 +670,10 @@ void OnTick()
 
     DoAutoTrade();
 
+    DoStarTrackingForAutoScaling();
+
+    DoAutoScaling();
+
     DoCloseAllOnEquityReach();
 
     // DoFetchWebCommands();
@@ -706,7 +711,8 @@ void DoAutoTrade()
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-        PositionScaled = false;
+        ScaleAtPrice = 0;
+        CancelAtPrice = 0;
     }
 
     if (CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar)
@@ -719,7 +725,98 @@ void DoAutoTrade()
 
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-        PositionScaled = false;
+        ScaleAtPrice = 0;
+        CancelAtPrice = 0;
+    }
+}
+
+void DoStarTrackingForAutoScaling()
+{
+    // Don't do anything if scaling prices were already set
+    if (ScaleAtPrice != 0 || CancelAtPrice != 0) return;
+
+    // If there are no orders, then there is nothing to track
+    if (PositionsTotal() != 1) return;
+    
+    // Get first order
+    if (!PositionSelect(PositionGetSymbol(0))) return;
+    
+    double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+    double slPrice = PositionGetDouble(POSITION_SL);
+    ENUM_POSITION_TYPE positionType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+    CancelAtPrice = slPrice;
+    double priceDifference = MathAbs(entryPrice - slPrice);
+    
+    // Set the price at which the position should be scaled
+    if (positionType == POSITION_TYPE_BUY)
+    {
+        ScaleAtPrice = entryPrice + priceDifference;
+    }
+    else if (positionType == POSITION_TYPE_SELL)
+    {
+        ScaleAtPrice = entryPrice - priceDifference;
+    }
+}
+
+void DoAutoScaling()
+{
+    // Don't do anything if scaling prices were cleared out
+    if (ScaleAtPrice == 0 || CancelAtPrice == 0) return;
+    
+    // If there are no orders, then there is nothing to scale
+    if (PositionsTotal() != 1) return;
+    
+    // Get first order
+    if (!PositionSelect(PositionGetSymbol(0))) return;
+    
+    ENUM_POSITION_TYPE positionType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+    double currentPrice;
+    
+    if (positionType == POSITION_TYPE_BUY)
+    {
+        currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+        
+        // Reached cancel price, terminate the idea to scale
+        if (currentPrice < CancelAtPrice)
+        {
+            Print("Reached cancel price for scaling idea: ", CancelAtPrice);
+            ScaleAtPrice = 0;
+            CancelAtPrice = 0;
+            return;
+        }
+        
+        // Reached scale price, scale the position
+        if (currentPrice >= ScaleAtPrice)
+        {
+            Print("Reached scale price : ", ScaleAtPrice);
+            ScaleAtPrice = 0;
+            CancelAtPrice = 0;
+            DoScaling();
+            Trade();
+        }
+    }
+    else if (positionType == POSITION_TYPE_SELL)
+    {
+        currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+        
+        // Reached cancel price, terminate the idea to scale
+        if (currentPrice > CancelAtPrice)
+        {
+            Print("Reached cancel price for scaling idea: ", CancelAtPrice);
+            ScaleAtPrice = 0;
+            CancelAtPrice = 0;
+            return;
+        }
+        
+        // Reached scale price, scale the position
+        if (currentPrice <= ScaleAtPrice)
+        {
+            Print("Reached scale price: ", ScaleAtPrice);
+            ScaleAtPrice = 0;
+            CancelAtPrice = 0;
+            DoScaling();
+            Trade();
+        }
     }
 }
 
@@ -997,10 +1094,14 @@ void DoCloseAllOnEquityReach()
 
     CTrade m_trade;
     m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
+
+    Print("Closing position because equity reached goal: ", CustomEquityGoal);
 }
 
 void DoScaling()
 {
+    Print("Scaling position");
+
     sets.EntryType = Pending;
     double prevEntryLevel = sets.EntryLevel;
 

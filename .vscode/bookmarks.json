@@ -9,57 +9,57 @@
 					"label": "Variables"
 				},
 				{
-					"line": 678,
+					"line": 683,
 					"column": 0,
 					"label": "DoCancelAutoTrade()"
 				},
 				{
-					"line": 684,
+					"line": 689,
 					"column": 0,
 					"label": "DoAutoTrade()"
 				},
 				{
-					"line": 725,
+					"line": 822,
 					"column": 0,
 					"label": "DoSetTPToEquityGoal()"
 				},
 				{
-					"line": 758,
+					"line": 855,
 					"column": 0,
 					"label": "DoMax5PipsEntry()"
 				},
 				{
-					"line": 779,
+					"line": 876,
 					"column": 0,
 					"label": "DoSafe5PipsEntry()"
 				},
 				{
-					"line": 802,
+					"line": 899,
 					"column": 0,
 					"label": "DoSnapSL()"
 				},
 				{
-					"line": 853,
+					"line": 950,
 					"column": 0,
 					"label": "Do80PercentPullbackEntry()"
 				},
 				{
-					"line": 891,
+					"line": 988,
 					"column": 0,
 					"label": "DoPendingPullbackEntry()"
 				},
 				{
-					"line": 924,
+					"line": 1021,
 					"column": 0,
 					"label": "DoFetchWebCommands()"
 				},
 				{
-					"line": 988,
+					"line": 1085,
 					"column": 0,
 					"label": "DoCloseAllOnEquityReach()"
 				},
 				{
-					"line": 1001,
+					"line": 1100,
 					"column": 0,
 					"label": "DoScaling()"
 				}
