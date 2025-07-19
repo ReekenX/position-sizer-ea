@@ -737,7 +737,7 @@ void DoSetTPToEquityGoal()
 
     // Figure out the minimum minor multiplier needed to
     // reach the target equity goal (eg. 1:3.1 RRR, 1:3.2 RRR, etc)
-    for (int i = 1; i < 30; i++) {
+    for (int i = 1; i < 11; i++) {
         ExtDialog.OnClickBtnTakeProfitsNumberAdd(true);
         ExtDialog.RefreshValues();
 
