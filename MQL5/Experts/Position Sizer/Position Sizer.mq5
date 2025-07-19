@@ -757,6 +757,8 @@ void DoStarTrackingForAutoScaling()
     {
         ScaleAtPrice = entryPrice - priceDifference;
     }
+
+    Print("Trade will be scaled at: ", ScaleAtPrice, " and canceled at: ", CancelAtPrice);
 }
 
 void DoAutoScaling()
@@ -859,11 +861,9 @@ void DoMax5PipsEntry()
     // Check if SL is bigger than 50 ticks
     double fullPriceRange = MathAbs(sets.EntryLevel - sets.StopLossLevel);
     if (fullPriceRange / _Point < 50) {
-        Print("SL is smaller than 50 ticks, nothing to adjust ", fullPriceRange / _Point);
+        Print("SL is smaller than 50 ticks, nothing to adjust: ", fullPriceRange / _Point);
         return;
     }
-
-    Print("SL is bigger than 50 ticks: ", fullPriceRange / _Point);
 
     // Set max 5 pips SL
     if (sets.TradeDirection == Long) {
@@ -873,6 +873,8 @@ void DoMax5PipsEntry()
     }
     ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
+
+    Print("SL is bigger than 50 ticks, making limit order: ", fullPriceRange / _Point);
 }
 
 void DoSafe5PipsEntry()
