@@ -750,23 +750,7 @@ void DoAutoCancelScale()
         {
             Print("Reached cancel price for scaling idea: ", CancelAtPrice);
 
-            // Find and remove all pending orders
-            int totalOrders = OrdersTotal();
-            for (int i = totalOrders - 1; i >= 0; i--)
-            {
-                // if (OrderSelect(i, SELECT_BY_INDEX, MODE_TRADES))
-                // {
-                //     if (OrderType() == ORDER_BUY_LIMIT || OrderType() == ORDER_SELL_LIMIT ||
-                //         OrderType() == ORDER_BUY_STOP  || OrderType() == ORDER_SELL_STOP ||
-                //         OrderType() == ORDER_BUY_STOP_LIMIT || OrderType() == ORDER_SELL_STOP_LIMIT)
-                //     {
-                //         ulong ticket = OrderTicket();
-                //         CTrade trade;
-                //         trade.OrderDelete(ticket);
-                //         Print("Deleted pending order: ", ticket);
-                //     }
-                // }
-            }
+            DoDeletePendingOrders();
 
             CancelAtPrice = 0;
         }
@@ -780,29 +764,37 @@ void DoAutoCancelScale()
         {
             Print("Reached cancel price for scaling idea: ", CancelAtPrice);
 
-            // Find and remove all pending orders
-            int totalOrders = OrdersTotal();
-            for (int i = totalOrders - 1; i >= 0; i--)
-            {
-                // if (OrderSelect(i, SELECT_BY_INDEX, MODE_TRADES))
-                // {
-                //     if (OrderType() == ORDER_BUY_LIMIT || OrderType() == ORDER_SELL_LIMIT ||
-                //         OrderType() == ORDER_BUY_STOP  || OrderType() == ORDER_SELL_STOP ||
-                //         OrderType() == ORDER_BUY_STOP_LIMIT || OrderType() == ORDER_SELL_STOP_LIMIT)
-                //     {
-                //         ulong ticket = OrderTicket();
-                //         CTrade trade;
-                //         trade.OrderDelete(ticket);
-                //         Print("Deleted pending order: ", ticket);
-                //     }
-                // }
-            }
+            DoDeletePendingOrders();
+
             CancelAtPrice = 0;
         }
     }
 }
 
-void DoUpdateScalingSL() {
+void DoDeletePendingOrders()
+{
+    // Find and remove all pending orders
+    int totalOrders = OrdersTotal();
+    for (int i = totalOrders - 1; i >= 0; i--)
+    {
+        ulong ticket = OrderGetTicket(i);
+        if (ticket > 0)
+        {
+            ENUM_ORDER_TYPE orderType = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+            if (orderType == ORDER_TYPE_BUY_LIMIT || orderType == ORDER_TYPE_SELL_LIMIT ||
+                orderType == ORDER_TYPE_BUY_STOP || orderType == ORDER_TYPE_SELL_STOP ||
+                orderType == ORDER_TYPE_BUY_STOP_LIMIT || orderType == ORDER_TYPE_SELL_STOP_LIMIT)
+            {
+                CTrade trade;
+                trade.OrderDelete(ticket);
+                Print("Deleted pending order: ", ticket);
+            }
+        }
+    }
+}
+
+void DoUpdateScalingSL()
+{
     // TODO
 }
 
