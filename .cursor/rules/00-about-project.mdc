@@ -1,0 +1,27 @@
+---
+alwaysApply: true
+description: MQL5 Trading Project Information
+---
+
+# MQL5 Trading Project
+
+This is an MQL4 trading project containing Expert Advisors (EAs) for MetaTrader 5 platform.
+
+## Project Structure
+- **MQL5/**: Contains MetaTrader 5 Expert Advisors and includes  
+- Main project: Position Sizer EA for calculating trading position sizes
+
+## File Types
+- `.mq5` - MQL5 source files (MetaTrader 5) 
+- `.mqh` - MQL header/include files (shared between MQL4/MQL5)
+- `.ex5` - Compiled MQL5 executable files
+
+Do not modify any other file types other than `.mq5` and `.mqh`.
+
+## Documentation
+For MQL5 language reference, trading functions, and technical documentation, use: https://www.mql5.com/en/docs/trading
+
+## Key Concepts
+- **Expert Advisors (EAs)**: Automated trading programs
+- **Trading Functions**: OrderSend, PositionSelect, etc. for trade management
+- **Position Management**: Risk management and position sizing calculations
