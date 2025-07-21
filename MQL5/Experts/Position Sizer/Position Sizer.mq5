@@ -1115,7 +1115,7 @@ void DoScaling()
     if (AlreadyScaled) return;
 
     // If there are no orders, then there is nothing to scale
-    if (PositionsTotal() != 1) return;
+    if (PositionsTotal() == 1) return;
 
     // Get the first order ticket
     ulong firstOrderTicket = OrderGetTicket(0);
