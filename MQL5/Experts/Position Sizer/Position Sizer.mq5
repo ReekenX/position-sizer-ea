@@ -670,6 +670,8 @@ void OnTick()
 
     DoAutoTrade();
 
+    DoScaling();
+
     DoAutoCancelScale();
 
     DoUpdateScalingSL();
@@ -759,6 +761,7 @@ void DoAutoCancelScale()
             DoDeletePendingOrders();
 
             CancelAtPrice = 0;
+            AlreadyScaled = true;
         }
     }
     else if (positionType == POSITION_TYPE_SELL)
@@ -773,6 +776,7 @@ void DoAutoCancelScale()
             DoDeletePendingOrders();
 
             CancelAtPrice = 0;
+            AlreadyScaled = true;
         }
     }
 }
@@ -1171,23 +1175,47 @@ void DoCloseAllOnEquityReach()
 
 void DoScaling()
 {
-    Print("Scaling position");
+    // Don't do anything if cancel price is not set
+    if (CancelAtPrice == 0) return;
 
+    // Don't do anything if the position was already scaled
+    if (AlreadyScaled) return;
+
+    // If there are no orders, then there is nothing to scale
+    if (PositionsTotal() != 1) return;
+
+    // Get the first order ticket
+    ulong firstOrderTicket = OrderGetTicket(0);
+    if (firstOrderTicket == 0) return;
+
+    // Select the first order
+    if (!OrderSelect(firstOrderTicket)) return;
+
+    // Get entry price and SL price
+    double entryPrice = OrderGetDouble(ORDER_PRICE_OPEN);
+    double slPrice = OrderGetDouble(ORDER_SL);
+
+    // Freeze price lines
     sets.EntryType = Pending;
-    double prevEntryLevel = sets.EntryLevel;
 
     if (sets.TradeDirection == Long) {
-        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(sets.EntryLevel + MathAbs(sets.EntryLevel - sets.StopLossLevel), _Digits));
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(entryPrice + MathAbs(entryPrice - slPrice), _Digits));
     }
     if (sets.TradeDirection == Short) {
-        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(sets.EntryLevel - MathAbs(sets.StopLossLevel - sets.EntryLevel), _Digits));
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(entryPrice - MathAbs(slPrice - entryPrice), _Digits));
     }
     ExtDialog.OnEndEditEdtEntryLevel();
 
-    ExtDialog.m_EdtSL.Text(DoubleToString(prevEntryLevel, _Digits));
+    ExtDialog.m_EdtSL.Text(DoubleToString(entryPrice, _Digits));
     ExtDialog.OnEndEditEdtSL();
 
     ExtDialog.RefreshValues();
+
+    Trade();
+
+    Print("Scaled position");
+
+    AlreadyScaled = true;
 }
 
 void OnChartEvent(const int id,
@@ -1519,7 +1547,8 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
-            DoScaling();
+            // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
+            DoDeletePendingOrders();
         }
     }
 
