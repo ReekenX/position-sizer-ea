@@ -43,6 +43,7 @@ input string CustomWebCommandDomain = "https://www.example.org"; // URL to the w
 bool CustomWebRequestInProgress = false;
 double CancelAtPrice = 0; // Cancel position when this price is reached
 bool AlreadyScaled = false; // If true, the position was already scaled
+bool AlreadyAppliedSL = false; // If true, the SL was fixed
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -674,11 +675,9 @@ void OnTick()
 
     DoAutoCancelScale();
 
-    DoUpdateScalingSL();
+    // DoUpdateScalingSL();
 
     DoCloseAllOnEquityReach();
-
-    // DoFetchWebCommands();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
@@ -715,6 +714,7 @@ void DoAutoTrade()
 
         CancelAtPrice = sets.StopLossLevel;
         AlreadyScaled = false;
+        AlreadyAppliedSL = false;
     }
 
     if (CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar)
@@ -729,6 +729,7 @@ void DoAutoTrade()
 
         CancelAtPrice = sets.StopLossLevel;
         AlreadyScaled = false;
+        AlreadyAppliedSL = false;
     }
 }
 
@@ -806,93 +807,25 @@ void DoDeletePendingOrders()
 void DoUpdateScalingSL()
 {
     // Don't do anything if the position was already scaled
-    if (AlreadyScaled) return;
+    if (AlreadyAppliedSL) return;
 
     // Only apply changes if there is exactly 2 orders
     if (OrdersTotal() != 2) return;
 
-    DoUpdateScalingSLForBuy();
-    DoUpdateScalingSLForSell();
+    // Get first order SL
+    if (!OrderSelect(0)) return;
+    double firstOrderSL = OrderGetDouble(ORDER_SL);
 
-    AlreadyScaled = true;
-}
+    // Get second order SL
+    if (!OrderSelect(1)) return;
+    double secondOrderSL = OrderGetDouble(ORDER_SL);
+    
+    // Get price between first and second order SL
+    double priceBetweenSLs = (firstOrderSL + secondOrderSL) / 2;
 
-void DoUpdateScalingSLForBuy()
-{
-    // // Get the two order tickets
-    // ulong ticket1 = OrderGetTicket(0);
-    // ulong ticket2 = OrderGetTicket(1);
-    
-    // if (ticket1 == 0 || ticket2 == 0) return;
-    
-    // // Get first order info
-    // if (!OrderSelect(ticket1)) return;
-    // ENUM_ORDER_TYPE orderType1 = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
-    // double sl1 = OrderGetDouble(ORDER_SL);
-    // double entryPrice1 = OrderGetDouble(ORDER_PRICE_OPEN);
-    
-    // // Get second order SL
-    // if (!OrderSelect(ticket2)) return;
-    // double sl2 = OrderGetDouble(ORDER_SL);
-    
-    // // Check if first order is BUY type
-    // if (orderType1 != ORDER_TYPE_BUY_LIMIT && orderType1 != ORDER_TYPE_BUY_STOP) return;
+    Print("Manually modify SL of both orders to: ", priceBetweenSLs);
 
-    // // Get absolute difference of first order SL and entry price, divide by two
-    // double HalfSLSize = MathAbs(sl1 - entryPrice1) / 2.0;
-    
-    // // Determine which order has lowest/highest SL
-    // ulong lowestSLTicket, highestSLTicket;
-    // double lowestSL, highestSL;
-    
-    // if (sl1 < sl2)
-    // {
-    //     lowestSLTicket = ticket1;
-    //     highestSLTicket = ticket2;
-    //     lowestSL = sl1;
-    //     highestSL = sl2;
-    // }
-    // else
-    // {
-    //     lowestSLTicket = ticket2;
-    //     highestSLTicket = ticket1;
-    //     lowestSL = sl2;
-    //     highestSL = sl1;
-    // }
-    
-    // // Calculate new SL values
-    // double newLowestSL = lowestSL + HalfSLSize;
-    // double newHighestSL = highestSL - HalfSLSize;
-    
-    // // Modify only the SL of each order
-    // MqlTradeRequest request = {};
-    // MqlTradeResult result = {};
-    
-    // // Modify lowest SL order
-    // request.action = TRADE_ACTION_MODIFY;
-    // request.order = lowestSLTicket;
-    // request.sl = newLowestSL;
-    
-    // if (!OrderSend(request, result))
-    // {
-    //     Print("Failed to modify order ", lowestSLTicket, ". Error: ", GetLastError());
-    // }
-    
-    // // Modify highest SL order
-    // request.order = highestSLTicket;
-    // request.sl = newHighestSL;
-    
-    // if (!OrderSend(request, result))
-    // {
-    //     Print("Failed to modify order ", highestSLTicket, ". Error: ", GetLastError());
-    // }
-    
-    // Print("Updated scaling SL - Lowest SL: ", newLowestSL, ", Highest SL: ", newHighestSL, ", HalfSLSize: ", HalfSLSize);
-}
-
-void DoUpdateScalingSLForSell()
-{
-    // TODO
+    // AlreadyAppliedSL = true;
 }
 
 void DoSetTPToEquityGoal()
@@ -1548,7 +1481,7 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoDeletePendingOrders();
+            DoUpdateScalingSL();
         }
     }
 
