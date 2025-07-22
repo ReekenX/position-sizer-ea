@@ -43,7 +43,6 @@ input string CustomWebCommandDomain = "https://www.example.org"; // URL to the w
 bool CustomWebRequestInProgress = false;
 double CancelAtPrice = 0; // Cancel position when this price is reached
 bool AlreadyScaled = false; // If true, the position was already scaled
-bool AlreadyAppliedSL = false; // If true, the SL was fixed
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -675,8 +674,6 @@ void OnTick()
 
     DoAutoCancelScale();
 
-    // DoUpdateScalingSL();
-
     DoCloseAllOnEquityReach();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
@@ -714,7 +711,6 @@ void DoAutoTrade()
 
         CancelAtPrice = sets.StopLossLevel;
         AlreadyScaled = false;
-        AlreadyAppliedSL = false;
     }
 
     if (CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar)
@@ -729,7 +725,6 @@ void DoAutoTrade()
 
         CancelAtPrice = sets.StopLossLevel;
         AlreadyScaled = false;
-        AlreadyAppliedSL = false;
     }
 }
 
@@ -806,9 +801,6 @@ void DoDeletePendingOrders()
 
 void DoUpdateScalingSL()
 {
-    // Don't do anything if the position was already scaled
-    if (AlreadyAppliedSL) return;
-
     // Only apply changes if there is exactly 2 orders
     if (OrdersTotal() != 2) return;
 
@@ -823,9 +815,18 @@ void DoUpdateScalingSL()
     // Get price between first and second order SL
     double priceBetweenSLs = (firstOrderSL + secondOrderSL) / 2;
 
-    Print("Manually modify SL of both orders to: ", priceBetweenSLs);
+    // Update first order SL
+    if (!OrderSelect(0)) return;
+    ulong firstOrderTicket = OrderGetTicket(0);
+    CTrade trade;
+    trade.OrderModify(firstOrderTicket, OrderGetDouble(ORDER_PRICE_OPEN), priceBetweenSLs, OrderGetDouble(ORDER_TP), ORDER_TIME_GTC, OrderGetInteger(ORDER_TIME_EXPIRATION));
 
-    // AlreadyAppliedSL = true;
+    // Update second order SL
+    if (!OrderSelect(1)) return;
+    ulong secondOrderTicket = OrderGetTicket(1);
+    trade.OrderModify(secondOrderTicket, OrderGetDouble(ORDER_PRICE_OPEN), priceBetweenSLs, OrderGetDouble(ORDER_TP), ORDER_TIME_GTC, OrderGetInteger(ORDER_TIME_EXPIRATION));
+
+    Print("Updated both orders SL to: ", priceBetweenSLs);
 }
 
 void DoSetTPToEquityGoal()
@@ -1146,9 +1147,11 @@ void DoScaling()
 
     Trade();
 
+    AlreadyScaled = true;
+
     Print("Scaled position");
 
-    AlreadyScaled = true;
+    DoUpdateScalingSL();
 }
 
 void OnChartEvent(const int id,
