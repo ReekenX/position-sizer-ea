@@ -716,6 +716,8 @@ void DoAutoTrade()
 
     CancelAtPrice = sets.StopLossLevel;
     AlreadyScaled = false;
+
+    Print("Trade placed. Cancel scale idea at: ", CancelAtPrice);
 }
 
 void DoAutoCancelScale()
@@ -1097,8 +1099,8 @@ void DoScaling()
     // Don't do anything if cancel price is not set
     if (CancelAtPrice == 0) return;
 
-    // If there are no orders, then there is nothing to scale
-    if (PositionsTotal() == 0) return;
+    // Allow to scale only once
+    if (AlreadyScaled) return;
 
     // Get the first order ticket
     ulong firstOrderTicket = OrderGetTicket(0);
@@ -1466,7 +1468,7 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoUpdateScalingSL();
+            DoScaling();
         }
     }
 
