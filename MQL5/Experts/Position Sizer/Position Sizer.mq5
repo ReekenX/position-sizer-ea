@@ -695,37 +695,27 @@ void DoAutoTrade()
         return;
     }
 
+    // Record new bar so that this function is called once per bar
     CustomCurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
 
+    // Check if confirmation bar received
     bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
-
-    if (CustomTradeSignal == "BUY" && sets.TradeDirection == Long && isBuyBar)
-    {
-        CustomTradeSignal = "NONE";
-
-        DoSafe5PipsEntry();
-
-        Trade();
-
-        ExtDialog.m_BtnOrderOnNextBar.Text(" ");
-
-        CancelAtPrice = sets.StopLossLevel;
-        AlreadyScaled = false;
+    bool shouldBuy = CustomTradeSignal == "BUY" && sets.TradeDirection == Long && isBuyBar;
+    bool shouldSell = CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar;
+    if (!shouldBuy && !shouldSell) {
+        return;
     }
 
-    if (CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar)
-    {
-        CustomTradeSignal = "NONE";
+    CustomTradeSignal = "NONE";
 
-        DoSafe5PipsEntry();
+    DoSafe5PipsEntry();
 
-        Trade();
+    Trade();
 
-        ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+    ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-        CancelAtPrice = sets.StopLossLevel;
-        AlreadyScaled = false;
-    }
+    CancelAtPrice = sets.StopLossLevel;
+    AlreadyScaled = false;
 }
 
 void DoAutoCancelScale()
