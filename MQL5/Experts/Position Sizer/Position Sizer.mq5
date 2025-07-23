@@ -733,9 +733,6 @@ void DoAutoCancelScale()
     // Don't do anything if cancel price is not set
     if (CancelAtPrice == 0) return;
 
-    // Don't do anything if the position was already scaled
-    if (AlreadyScaled) return;
-    
     // If there are no orders, then there is nothing to scale
     if (PositionsTotal() != 1) return;
     
@@ -757,7 +754,6 @@ void DoAutoCancelScale()
             DoDeletePendingOrders();
 
             CancelAtPrice = 0;
-            AlreadyScaled = true;
         }
     }
     else if (positionType == POSITION_TYPE_SELL)
@@ -772,7 +768,6 @@ void DoAutoCancelScale()
             DoDeletePendingOrders();
 
             CancelAtPrice = 0;
-            AlreadyScaled = true;
         }
     }
 }
