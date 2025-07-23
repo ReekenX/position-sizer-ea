@@ -1097,11 +1097,8 @@ void DoScaling()
     // Don't do anything if cancel price is not set
     if (CancelAtPrice == 0) return;
 
-    // Don't do anything if the position was already scaled
-    if (AlreadyScaled) return;
-
     // If there are no orders, then there is nothing to scale
-    if (PositionsTotal() == 1) return;
+    if (PositionsTotal() == 0) return;
 
     // Get the first order ticket
     ulong firstOrderTicket = OrderGetTicket(0);
