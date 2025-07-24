@@ -1102,16 +1102,16 @@ void DoScaling()
     // Allow to scale only once
     if (AlreadyScaled) return;
 
-    // Get the first order ticket
-    ulong firstOrderTicket = OrderGetTicket(0);
-    if (firstOrderTicket == 0) return;
+    // Get the first position ticket
+    ulong firstPositionTicket = PositionGetTicket(0);
+    if (firstPositionTicket == 0) return;
 
-    // Select the first order
-    if (!OrderSelect(firstOrderTicket)) return;
+    // Select the first position
+    if (!PositionSelect(PositionGetSymbol(0))) return;
 
     // Get entry price and SL price
-    double entryPrice = OrderGetDouble(ORDER_PRICE_OPEN);
-    double slPrice = OrderGetDouble(ORDER_SL);
+    double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+    double slPrice = PositionGetDouble(POSITION_SL);
 
     // Freeze price lines
     sets.EntryType = Pending;
@@ -1468,7 +1468,7 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoScaling();
+            DoUpdateScalingSL();
         }
     }
 
