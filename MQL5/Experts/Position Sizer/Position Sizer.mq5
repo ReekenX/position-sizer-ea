@@ -788,32 +788,32 @@ void DoDeletePendingOrders()
 
 void DoUpdateScalingSL()
 {
-    // Only apply changes if there is exactly 2 orders
-    if (OrdersTotal() != 2) return;
+    // Only apply changes if there is exactly 1 executed order (another one will be pending)
+    if (PositionsTotal() != 1) return;
 
-    // Get first order SL
+    // Get first executed order SL
+    if (!PositionGetTicket(0)) return;
+    double firstSL = PositionGetDouble(POSITION_SL);
+
+    // Get second pending order SL
     if (!OrderSelect(0)) return;
-    double firstOrderSL = OrderGetDouble(ORDER_SL);
-
-    // Get second order SL
-    if (!OrderSelect(1)) return;
-    double secondOrderSL = OrderGetDouble(ORDER_SL);
+    double secondSL = OrderGetDouble(ORDER_SL);
     
     // Get price between first and second order SL
-    double priceBetweenSLs = (firstOrderSL + secondOrderSL) / 2;
+    double middleSL = (firstSL + secondSL) / 2;
 
     // Update first order SL
-    if (!OrderSelect(0)) return;
-    ulong firstOrderTicket = OrderGetTicket(0);
+    if (!PositionSelect(0)) return;
+    ulong firstOrderTicket = PositionGetTicket(0);
     CTrade trade;
-    trade.OrderModify(firstOrderTicket, OrderGetDouble(ORDER_PRICE_OPEN), priceBetweenSLs, OrderGetDouble(ORDER_TP), ORDER_TIME_GTC, OrderGetInteger(ORDER_TIME_EXPIRATION));
+    trade.PositionModify(firstOrderTicket, middleSL, PositionGetDouble(POSITION_TP));
 
     // Update second order SL
-    if (!OrderSelect(1)) return;
-    ulong secondOrderTicket = OrderGetTicket(1);
-    trade.OrderModify(secondOrderTicket, OrderGetDouble(ORDER_PRICE_OPEN), priceBetweenSLs, OrderGetDouble(ORDER_TP), ORDER_TIME_GTC, OrderGetInteger(ORDER_TIME_EXPIRATION));
+    if (!OrderSelect(0)) return;
+    ulong secondOrderTicket = OrderGetTicket(0);
+    trade.OrderModify(secondOrderTicket, OrderGetDouble(ORDER_PRICE_OPEN), middleSL, OrderGetDouble(ORDER_TP), ORDER_TIME_GTC, OrderGetInteger(ORDER_TIME_EXPIRATION));
 
-    Print("Updated both orders SL to: ", priceBetweenSLs);
+    Print("Updated both orders SL to: ", middleSL);
 }
 
 void DoSetTPToEquityGoal()

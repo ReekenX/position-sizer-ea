@@ -9,69 +9,74 @@
 					"label": "Variables"
 				},
 				{
-					"line": 687,
+					"line": 681,
 					"column": 0,
 					"label": "DoCancelAutoTrade()"
 				},
 				{
-					"line": 693,
+					"line": 687,
 					"column": 0,
 					"label": "DoAutoTrade()"
 				},
 				{
-					"line": 730,
+					"line": 716,
 					"column": 0,
 					"label": "DoAutoCancelScale()"
 				},
 				{
-					"line": 779,
+					"line": 760,
 					"column": 0,
 					"label": "DoDeletePendingOrders()"
 				},
 				{
-					"line": 801,
+					"line": 782,
 					"column": 0,
 					"label": "DoUpdateScalingSL()"
 				},
 				{
-					"line": 825,
+					"line": 812,
 					"column": 0,
 					"label": "DoSetTPToEquityGoal()"
 				},
 				{
-					"line": 858,
+					"line": 845,
 					"column": 0,
 					"label": "DoMax5PipsEntry()"
 				},
 				{
-					"line": 879,
+					"line": 866,
 					"column": 0,
 					"label": "DoSafe5PipsEntry()"
 				},
 				{
-					"line": 902,
+					"line": 889,
 					"column": 0,
 					"label": "DoSnapSL()"
 				},
 				{
-					"line": 953,
+					"line": 940,
 					"column": 0,
 					"label": "Do80PercentPullbackEntry()"
 				},
 				{
-					"line": 991,
+					"line": 978,
 					"column": 0,
 					"label": "DoPendingPullbackEntry()"
 				},
 				{
-					"line": 1024,
+					"line": 1011,
 					"column": 0,
 					"label": "DoFetchWebCommands()"
 				},
 				{
-					"line": 1088,
+					"line": 1075,
 					"column": 0,
 					"label": "DoCloseAllOnEquityReach()"
+				},
+				{
+					"line": 1090,
+					"column": 0,
+					"label": "DoScaling()"
 				}
 			]
 		}
