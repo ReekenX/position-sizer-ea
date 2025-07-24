@@ -5,7 +5,7 @@ description: MQL5 Trading Project Information
 
 # MQL5 Trading Project
 
-This is an MQL4 trading project containing Expert Advisors (EAs) for MetaTrader 5 platform.
+This is an MQL5 trading project containing Expert Advisors (EAs) for MetaTrader 5 platform.
 
 ## Project Structure
 - **MQL5/**: Contains MetaTrader 5 Expert Advisors and includes  
