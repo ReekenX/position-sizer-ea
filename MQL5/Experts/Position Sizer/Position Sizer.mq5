@@ -43,6 +43,7 @@ input string CustomWebCommandDomain = "https://www.example.org"; // URL to the w
 bool CustomWebRequestInProgress = false;
 double CancelAtPrice = 0; // Cancel position when this price is reached
 bool AlreadyScaled = false; // If true, the position was already scaled
+bool AlreadyUpdatedSL = false; // If true, then both orders received middle SL
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -674,6 +675,8 @@ void OnTick()
 
     DoAutoCancelScale();
 
+    DoUpdateScalingSL();
+
     DoCloseAllOnEquityReach();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
@@ -715,6 +718,7 @@ void DoAutoTrade()
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
     CancelAtPrice = sets.StopLossLevel;
+    AlreadyUpdatedSL = false;
     AlreadyScaled = false;
 
     Print("Trade placed. Cancel scale idea at: ", CancelAtPrice);
@@ -724,9 +728,6 @@ void DoAutoCancelScale()
 {
     // Don't do anything if cancel price is not set
     if (CancelAtPrice == 0) return;
-
-    // If there are no orders, then there is nothing to scale
-    if (PositionsTotal() != 1) return;
     
     // Get first order
     if (!PositionSelect(PositionGetSymbol(0))) return;
@@ -788,32 +789,36 @@ void DoDeletePendingOrders()
 
 void DoUpdateScalingSL()
 {
-    // Only apply changes if there is exactly 1 executed order (another one will be pending)
-    if (PositionsTotal() != 1) return;
+    // If already updated SL, then don't do anything
+    if (AlreadyUpdatedSL) return;
+
+    // Only apply changes if there are multiple orders
+    if (PositionsTotal() != 2) return;
 
     // Get first executed order SL
     if (!PositionGetTicket(0)) return;
     double firstSL = PositionGetDouble(POSITION_SL);
 
     // Get second pending order SL
-    if (!OrderSelect(0)) return;
-    double secondSL = OrderGetDouble(ORDER_SL);
+    if (!PositionGetTicket(1)) return;
+    double secondSL = PositionGetDouble(POSITION_SL);
     
     // Get price between first and second order SL
     double middleSL = (firstSL + secondSL) / 2;
 
     // Update first order SL
-    if (!PositionSelect(0)) return;
     ulong firstOrderTicket = PositionGetTicket(0);
     CTrade trade;
     trade.PositionModify(firstOrderTicket, middleSL, PositionGetDouble(POSITION_TP));
 
     // Update second order SL
-    if (!OrderSelect(0)) return;
-    ulong secondOrderTicket = OrderGetTicket(0);
-    trade.OrderModify(secondOrderTicket, OrderGetDouble(ORDER_PRICE_OPEN), middleSL, OrderGetDouble(ORDER_TP), ORDER_TIME_GTC, OrderGetInteger(ORDER_TIME_EXPIRATION));
+    ulong secondOrderTicket = PositionGetTicket(1);
+    CTrade trade2;
+    trade2.PositionModify(secondOrderTicket, middleSL, PositionGetDouble(POSITION_TP));
 
     Print("Updated both orders SL to: ", middleSL);
+
+    AlreadyUpdatedSL = true;
 }
 
 void DoSetTPToEquityGoal()
@@ -1133,9 +1138,7 @@ void DoScaling()
 
     AlreadyScaled = true;
 
-    Print("Scaled position");
-
-    DoUpdateScalingSL();
+    Print("Placed a scaled position");
 }
 
 void OnChartEvent(const int id,
