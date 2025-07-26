@@ -792,31 +792,34 @@ void DoUpdateScalingSL()
     // If already updated SL, then don't do anything
     if (AlreadyUpdatedSL) return;
 
-    // Only apply changes if there are multiple orders
+    // Only apply changes if script sees original and scaled order
     if (PositionsTotal() != 2) return;
 
-    // Get first executed order SL
+    // Get first executed order SL and TP
     if (!PositionGetTicket(0)) return;
     double firstSL = PositionGetDouble(POSITION_SL);
+    double firstTP = PositionGetDouble(POSITION_TP);
 
-    // Get second pending order SL
+    // Get second pending order SL and TP
     if (!PositionGetTicket(1)) return;
     double secondSL = PositionGetDouble(POSITION_SL);
-    
-    // Get price between first and second order SL
+    double secondTP = PositionGetDouble(POSITION_TP);
+
+    // Get price between first and second order SL and TP
     double middleSL = (firstSL + secondSL) / 2;
+    double middleTP = (firstTP + secondTP) / 2;
+
+    Print("Updated both orders SL to ", middleSL, " and TP to ", middleTP);
 
     // Update first order SL
     ulong firstOrderTicket = PositionGetTicket(0);
     CTrade trade;
-    trade.PositionModify(firstOrderTicket, middleSL, PositionGetDouble(POSITION_TP));
+    trade.PositionModify(firstOrderTicket, middleSL, middleTP);
 
     // Update second order SL
     ulong secondOrderTicket = PositionGetTicket(1);
     CTrade trade2;
-    trade2.PositionModify(secondOrderTicket, middleSL, PositionGetDouble(POSITION_TP));
-
-    Print("Updated both orders SL to: ", middleSL);
+    trade2.PositionModify(secondOrderTicket, middleSL, middleTP);
 
     AlreadyUpdatedSL = true;
 }
