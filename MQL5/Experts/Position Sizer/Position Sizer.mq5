@@ -677,8 +677,6 @@ void OnTick()
 
     DoUpdateScalingSL();
 
-    DoCloseAllOnEquityReach();
-
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
 
