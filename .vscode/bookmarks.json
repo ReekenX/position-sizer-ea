@@ -74,7 +74,7 @@
 					"label": "DoCloseAllOnEquityReach()"
 				},
 				{
-					"line": 1102,
+					"line": 1109,
 					"column": 0,
 					"label": "DoScaling()"
 				}

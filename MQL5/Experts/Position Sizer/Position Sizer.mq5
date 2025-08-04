@@ -1100,6 +1100,13 @@ void DoCloseAllOnEquityReach()
     Print("Closing position because equity reached goal: ", CustomEquityGoal);
 }
 
+void DoPreScaling()
+{
+    CancelAtPrice = sets.StopLossLevel;
+    AlreadyUpdatedSL = false;
+    AlreadyScaled = false;
+}
+
 void DoScaling()
 {
     // Don't do anything if cancel price is not set
@@ -1472,7 +1479,8 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoUpdateScalingSL();
+            DoPreScaling();
+            DoScaling();
         }
     }
 
