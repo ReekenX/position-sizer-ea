@@ -727,13 +727,13 @@ void DoAutoCancelScale()
     // Don't do anything if cancel price is not set
     if (CancelAtPrice == 0) return;
     
-    // Get first order
-    if (!PositionSelect(PositionGetSymbol(0))) return;
+    // Make sure there is a pending order
+    if (!OrderSelect(PositionGetTicket(0))) return;
     
-    ENUM_POSITION_TYPE positionType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+    ENUM_ORDER_TYPE orderType = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
     double currentPrice;
     
-    if (positionType == POSITION_TYPE_BUY)
+    if (orderType == ORDER_TYPE_BUY)
     {
         currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
         
@@ -747,7 +747,7 @@ void DoAutoCancelScale()
             CancelAtPrice = 0;
         }
     }
-    else if (positionType == POSITION_TYPE_SELL)
+    else if (orderType == ORDER_TYPE_SELL)
     {
         currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
         
