@@ -711,15 +711,15 @@ void DoAutoTrade()
 
     DoSafe5PipsEntry();
 
-    Trade();
-
-    ExtDialog.m_BtnOrderOnNextBar.Text(" ");
-
     CancelAtPrice = sets.StopLossLevel;
     AlreadyUpdatedSL = false;
     AlreadyScaled = false;
 
+    ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+
     Print("Trade placed. Cancel scale idea at: ", CancelAtPrice);
+
+    Trade();
 }
 
 void DoAutoCancelScale()
@@ -728,7 +728,7 @@ void DoAutoCancelScale()
     if (CancelAtPrice == 0) return;
     
     // Make sure there is a pending order
-    if (!OrderSelect(PositionGetTicket(0))) return;
+    if (!OrderSelect(OrderGetTicket(0))) return;
     
     ENUM_ORDER_TYPE orderType = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
     double currentPrice;
