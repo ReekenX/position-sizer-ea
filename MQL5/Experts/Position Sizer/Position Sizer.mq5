@@ -733,7 +733,8 @@ void DoAutoCancelScale()
     ENUM_ORDER_TYPE orderType = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
     double currentPrice;
     
-    if (orderType == ORDER_TYPE_BUY)
+    // Handle both limit and stop orders for buy direction
+    if (orderType == ORDER_TYPE_BUY || orderType == ORDER_TYPE_BUY_STOP)
     {
         currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
         
@@ -747,7 +748,8 @@ void DoAutoCancelScale()
             CancelAtPrice = 0;
         }
     }
-    else if (orderType == ORDER_TYPE_SELL)
+    // Handle both limit and stop orders for sell direction
+    else if (orderType == ORDER_TYPE_SELL || orderType == ORDER_TYPE_SELL_STOP)
     {
         currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
         
