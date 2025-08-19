@@ -727,41 +727,53 @@ void DoAutoCancelScale()
     // Don't do anything if cancel price is not set
     if (CancelAtPrice == 0) return;
     
-    // Make sure there is a pending order
-    if (!OrderSelect(OrderGetTicket(0))) return;
+    // Check if there are any pending orders
+    int totalOrders = OrdersTotal();
+    if (totalOrders == 0) return;
     
-    ENUM_ORDER_TYPE orderType = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
-    double currentPrice;
+    // Check all pending orders
+    bool shouldCancelOrders = false;
+    double currentBid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    double currentAsk = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
     
-    // Handle both limit and stop orders for buy direction
-    if (orderType == ORDER_TYPE_BUY || orderType == ORDER_TYPE_BUY_STOP)
+    for (int i = 0; i < totalOrders; i++)
     {
-        currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-        
-        // Reached cancel price, terminate the idea to scale
-        if (currentPrice <= CancelAtPrice)
+        ulong ticket = OrderGetTicket(i);
+        if (ticket > 0 && OrderSelect(ticket))
         {
-            Print("Reached cancel price for scaling idea: ", CancelAtPrice);
-
-            DoDeletePendingOrders();
-
-            CancelAtPrice = 0;
+            ENUM_ORDER_TYPE orderType = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+            
+            // Check buy direction orders (including limit orders)
+            if (orderType == ORDER_TYPE_BUY_LIMIT || orderType == ORDER_TYPE_BUY_STOP || 
+                orderType == ORDER_TYPE_BUY_STOP_LIMIT)
+            {
+                // For buy orders, cancel if bid price drops to or below CancelAtPrice (stop loss level)
+                if (currentBid <= CancelAtPrice)
+                {
+                    shouldCancelOrders = true;
+                    break;
+                }
+            }
+            // Check sell direction orders (including limit orders)
+            else if (orderType == ORDER_TYPE_SELL_LIMIT || orderType == ORDER_TYPE_SELL_STOP || 
+                     orderType == ORDER_TYPE_SELL_STOP_LIMIT)
+            {
+                // For sell orders, cancel if ask price rises to or above CancelAtPrice (stop loss level)
+                if (currentAsk >= CancelAtPrice)
+                {
+                    shouldCancelOrders = true;
+                    break;
+                }
+            }
         }
     }
-    // Handle both limit and stop orders for sell direction
-    else if (orderType == ORDER_TYPE_SELL || orderType == ORDER_TYPE_SELL_STOP)
+    
+    // If we should cancel orders, do it
+    if (shouldCancelOrders)
     {
-        currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-        
-        // Reached cancel price, terminate the idea to scale
-        if (currentPrice >= CancelAtPrice)
-        {
-            Print("Reached cancel price for scaling idea: ", CancelAtPrice);
-
-            DoDeletePendingOrders();
-
-            CancelAtPrice = 0;
-        }
+        Print("Reached cancel price for scaling idea: ", CancelAtPrice);
+        DoDeletePendingOrders();
+        CancelAtPrice = 0;
     }
 }
 
