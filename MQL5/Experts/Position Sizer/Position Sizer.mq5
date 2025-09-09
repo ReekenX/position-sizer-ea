@@ -671,6 +671,7 @@ void OnTick()
 
     DoAutoTrade();
 
+    // TODO: Remake scaling so that it is happen with Market Execution as price with STOP order is bad sometimes
     DoScaling();
 
     DoAutoCancelScale();
@@ -709,7 +710,7 @@ void DoAutoTrade()
 
     CustomTradeSignal = "NONE";
 
-    DoSafe5PipsEntry();
+    DoHalfPipSmallerPullbackEntry();
 
     CancelAtPrice = sets.StopLossLevel;
     AlreadyUpdatedSL = false;
@@ -999,6 +1000,29 @@ void Do80PercentPullbackEntry()
 
     // Set TP for 1:3 RRR
     ExtDialog.OnClickBtnTakeProfitsNumberAdd();
+    ExtDialog.RefreshValues();
+}
+
+void DoHalfPipSmallerPullbackEntry()
+{
+    sets.EntryType = Pending;
+
+    // Make safe SL 20% smaller
+    if (sets.TradeDirection == Long)
+    {
+        double smallerEntryPrice = iClose(NULL, PERIOD_M1, 1) - (_Point * 5);
+
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
+    }
+    else if (sets.TradeDirection == Short)
+    {
+        double smallerEntryPrice = iClose(NULL, PERIOD_M1, 1) + (_Point * 5);
+
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
+    }
+
     ExtDialog.RefreshValues();
 }
 
@@ -1493,8 +1517,7 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoPreScaling();
-            DoScaling();
+            DoHalfPipSmallerPullbackEntry();
         }
     }
 
