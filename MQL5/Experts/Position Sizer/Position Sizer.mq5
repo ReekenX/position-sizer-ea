@@ -1,4 +1,5 @@
-//+------------------------------------------------------------------+
+//TZ=GMT yarn test:unit -u src/timeline/InteractionsRightPanelMain.spec.ts+------------------------------------------------------------------+
+mo
 //|                                               Position Sizer.mq5 |
 //|                                  Copyright © 2025, EarnForex.com |
 //|                                       https://www.earnforex.com/ |
@@ -41,9 +42,9 @@ datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 bool CustomWebRequestInProgress = false;
-double CancelAtPrice = 0; // Cancel position when this price is reached
-bool AlreadyScaled = false; // If true, the position was already scaled
-bool AlreadyUpdatedSL = false; // If true, then both orders received middle SL
+double CustomCancelAtPrice = 0; // Cancel position when this price is reached
+bool CustomAlreadyScaled = false; // If true, the position was already scaled
+bool CustomAlreadyUpdatedSL = false; // If true, then both orders received middle SL
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -712,13 +713,13 @@ void DoAutoTrade()
 
     DoHalfPipSmallerPullbackEntry();
 
-    CancelAtPrice = sets.StopLossLevel;
-    AlreadyUpdatedSL = false;
-    AlreadyScaled = false;
+    CustomCancelAtPrice = sets.StopLossLevel;
+    CustomAlreadyUpdatedSL = false;
+    CustomAlreadyScaled = false;
 
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 
-    Print("Trade placed. Cancel scale idea at: ", CancelAtPrice);
+    Print("Trade placed. Cancel scale idea at: ", CustomCancelAtPrice);
 
     Trade();
 }
@@ -726,7 +727,7 @@ void DoAutoTrade()
 void DoAutoCancelScale()
 {
     // Don't do anything if cancel price is not set
-    if (CancelAtPrice == 0) return;
+    if (CustomCancelAtPrice == 0) return;
     
     // Check if there are any pending orders
     int totalOrders = OrdersTotal();
@@ -748,8 +749,8 @@ void DoAutoCancelScale()
             if (orderType == ORDER_TYPE_BUY_LIMIT || orderType == ORDER_TYPE_BUY_STOP || 
                 orderType == ORDER_TYPE_BUY_STOP_LIMIT)
             {
-                // For buy orders, cancel if bid price drops to or below CancelAtPrice (stop loss level)
-                if (currentBid <= CancelAtPrice)
+                // For buy orders, cancel if bid price drops to or below CustomCancelAtPrice (stop loss level)
+                if (currentBid <= CustomCancelAtPrice)
                 {
                     shouldCancelOrders = true;
                     break;
@@ -759,8 +760,8 @@ void DoAutoCancelScale()
             else if (orderType == ORDER_TYPE_SELL_LIMIT || orderType == ORDER_TYPE_SELL_STOP || 
                      orderType == ORDER_TYPE_SELL_STOP_LIMIT)
             {
-                // For sell orders, cancel if ask price rises to or above CancelAtPrice (stop loss level)
-                if (currentAsk >= CancelAtPrice)
+                // For sell orders, cancel if ask price rises to or above CustomCancelAtPrice (stop loss level)
+                if (currentAsk >= CustomCancelAtPrice)
                 {
                     shouldCancelOrders = true;
                     break;
@@ -772,9 +773,9 @@ void DoAutoCancelScale()
     // If we should cancel orders, do it
     if (shouldCancelOrders)
     {
-        Print("Reached cancel price for scaling idea: ", CancelAtPrice);
+        Print("Reached cancel price for scaling idea: ", CustomCancelAtPrice);
         DoDeletePendingOrders();
-        CancelAtPrice = 0;
+        CustomCancelAtPrice = 0;
     }
 }
 
@@ -803,7 +804,7 @@ void DoDeletePendingOrders()
 void DoUpdateScalingSL()
 {
     // If already updated SL, then don't do anything
-    if (AlreadyUpdatedSL) return;
+    if (CustomAlreadyUpdatedSL) return;
 
     // Only apply changes if script sees original and scaled order
     if (PositionsTotal() != 2) return;
@@ -834,7 +835,7 @@ void DoUpdateScalingSL()
     CTrade trade2;
     trade2.PositionModify(secondOrderTicket, middleSL, middleTP);
 
-    AlreadyUpdatedSL = true;
+    CustomAlreadyUpdatedSL = true;
 }
 
 void DoSetTPToEquityGoal()
@@ -1140,18 +1141,18 @@ void DoCloseAllOnEquityReach()
 
 void DoPreScaling()
 {
-    CancelAtPrice = sets.StopLossLevel;
-    AlreadyUpdatedSL = false;
-    AlreadyScaled = false;
+    CustomCancelAtPrice = sets.StopLossLevel;
+    CustomAlreadyUpdatedSL = false;
+    CustomAlreadyScaled = false;
 }
 
 void DoScaling()
 {
     // Don't do anything if cancel price is not set
-    if (CancelAtPrice == 0) return;
+    if (CustomCancelAtPrice == 0) return;
 
     // Allow to scale only once
-    if (AlreadyScaled) return;
+    if (CustomAlreadyScaled) return;
 
     // Get the first position ticket
     ulong firstPositionTicket = PositionGetTicket(0);
@@ -1182,7 +1183,7 @@ void DoScaling()
 
     Trade();
 
-    AlreadyScaled = true;
+    CustomAlreadyScaled = true;
 
     Print("Placed a scaled position");
 }
