@@ -1,5 +1,4 @@
-//TZ=GMT yarn test:unit -u src/timeline/InteractionsRightPanelMain.spec.ts+------------------------------------------------------------------+
-mo
+//+------------------------------------------------------------------+
 //|                                               Position Sizer.mq5 |
 //|                                  Copyright © 2025, EarnForex.com |
 //|                                       https://www.earnforex.com/ |
@@ -670,12 +669,13 @@ void OnTick()
 {
     ExtDialog.RefreshValues();
 
-    DoAutoTrade();
+    DoWaitConfirmationBar();
 
-    // TODO: Remake scaling so that it is happen with Market Execution as price with STOP order is bad sometimes
+    DoWaitDiscountAndTrade();
+
+    DoCancelScaleIfNeeded();
+
     DoScaling();
-
-    DoAutoCancelScale();
 
     DoUpdateScalingSL();
 
@@ -688,17 +688,15 @@ void DoCancelAutoTrade()
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 }
 
-void DoAutoTrade()
+void DoWaitConfirmationBar()
 {
     // No trade signal, so we don't need to trade
-    if (CustomTradeSignal == "NONE") return;
+    if (CustomTradeSignal != "BUY" && CustomTradeSignal != "SELL") return;
 
-    // Bar has not changed, so we don't need to trade
+    // Ensure this function is called once per bar
     if (CustomCurrentBarIndex == iTime(NULL, PERIOD_M1, 0)) {
         return;
     }
-
-    // Record new bar so that this function is called once per bar
     CustomCurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
 
     // Check if confirmation bar received
@@ -709,22 +707,59 @@ void DoAutoTrade()
         return;
     }
 
-    CustomTradeSignal = "NONE";
+    Print("Confirmation bar received for ", CustomTradeSignal);
+
+    if (shouldBuy) {
+        CustomTradeSignal = "PENDING_BUY";
+        ExtDialog.m_BtnOrderOnNextBar.Text("PB");
+    } else {
+        CustomTradeSignal = "PENDING_SELL";
+        ExtDialog.m_BtnOrderOnNextBar.Text("PS");
+    }
 
     DoHalfPipSmallerPullbackEntry();
-
-    CustomCancelAtPrice = sets.StopLossLevel;
-    CustomAlreadyUpdatedSL = false;
-    CustomAlreadyScaled = false;
-
-    ExtDialog.m_BtnOrderOnNextBar.Text(" ");
-
-    Print("Trade placed. Cancel scale idea at: ", CustomCancelAtPrice);
-
-    Trade();
 }
 
-void DoAutoCancelScale()
+void DoWaitDiscountAndTrade()
+{
+    if (CustomTradeSignal != "PENDING_BUY" && CustomTradeSignal != "PENDING_SELL") return;
+
+    // Trade when current BUY price is smaller than entry level
+    if (CustomTradeSignal == "PENDING_BUY") {
+        double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+        if (currentPrice < sets.EntryLevel) {
+            Print("Trade placed for BUY with discount");
+
+            sets.EntryType = Instant;
+            Trade();
+
+            CustomTradeSignal = "PENDING_BUY_SCALE";
+            ExtDialog.m_BtnOrderOnNextBar.Text("PBS");
+
+            CustomCancelAtPrice = sets.StopLossLevel;
+            CustomAlreadyUpdatedSL = false;
+        }
+    }
+
+    // Trade when current SELL price is greater than entry level
+    if (CustomTradeSignal == "PENDING_SELL") {
+        double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+        if (currentPrice > sets.EntryLevel) {
+            Print("Trade placed for SELL with discount");
+
+            sets.EntryType = Instant;
+            Trade();
+
+            CustomTradeSignal = "PENDING_SELL_SCALE";
+            ExtDialog.m_BtnOrderOnNextBar.Text("PSS");
+
+            CustomCancelAtPrice = sets.StopLossLevel;
+            CustomAlreadyUpdatedSL = false;
+        }
+    }
+}
+
+void DoCancelScaleIfNeeded()
 {
     // Don't do anything if cancel price is not set
     if (CustomCancelAtPrice == 0) return;
@@ -1152,7 +1187,7 @@ void DoScaling()
     if (CustomCancelAtPrice == 0) return;
 
     // Allow to scale only once
-    if (CustomAlreadyScaled) return;
+    if (CustomTradeSignal != "PENDING_SCALE_BUY" && CustomTradeSignal != "PENDING_SCALE_SELL") return;
 
     // Get the first position ticket
     ulong firstPositionTicket = PositionGetTicket(0);
@@ -1183,9 +1218,14 @@ void DoScaling()
 
     Trade();
 
-    CustomAlreadyScaled = true;
+    if (CustomTradeSignal == "PENDING_SCALE_BUY") {
+        Print("Placed BUY scaled position");
+    } else {
+        Print("Placed SELL scaled position");
+    }
 
-    Print("Placed a scaled position");
+    CustomTradeSignal = "NONE";
+    ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 }
 
 void OnChartEvent(const int id,
