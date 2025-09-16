@@ -711,10 +711,10 @@ void DoWaitConfirmationBar()
 
     if (shouldBuy) {
         CustomTradeSignal = "PENDING_BUY";
-        ExtDialog.m_BtnOrderOnNextBar.Text("PB");
+        ExtDialog.m_BtnOrderOnNextBar.Text("P");
     } else {
         CustomTradeSignal = "PENDING_SELL";
-        ExtDialog.m_BtnOrderOnNextBar.Text("PS");
+        ExtDialog.m_BtnOrderOnNextBar.Text("P");
     }
 
     DoHalfPipSmallerPullbackEntry();
@@ -728,16 +728,20 @@ void DoWaitDiscountAndTrade()
     if (CustomTradeSignal == "PENDING_BUY") {
         double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
         if (currentPrice < sets.EntryLevel) {
-            Print("Trade placed for BUY with discount");
+            Print("Discounted trade placed for BUY");
 
             sets.EntryType = Instant;
+            ExtDialog.RefreshValues();
+
             Trade();
 
             CustomTradeSignal = "PENDING_BUY_SCALE";
-            ExtDialog.m_BtnOrderOnNextBar.Text("PBS");
+            ExtDialog.m_BtnOrderOnNextBar.Text("X");
 
             CustomCancelAtPrice = sets.StopLossLevel;
             CustomAlreadyUpdatedSL = false;
+
+            Print("Will cancel BUY order scale when price reaches ", sets.StopLossLevel);
         }
     }
 
@@ -745,16 +749,20 @@ void DoWaitDiscountAndTrade()
     if (CustomTradeSignal == "PENDING_SELL") {
         double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
         if (currentPrice > sets.EntryLevel) {
-            Print("Trade placed for SELL with discount");
+            Print("Discounted trade placed for SELL");
 
             sets.EntryType = Instant;
+            ExtDialog.RefreshValues();
+
             Trade();
 
             CustomTradeSignal = "PENDING_SELL_SCALE";
-            ExtDialog.m_BtnOrderOnNextBar.Text("PSS");
+            ExtDialog.m_BtnOrderOnNextBar.Text("X");
 
             CustomCancelAtPrice = sets.StopLossLevel;
             CustomAlreadyUpdatedSL = false;
+
+            Print("Will cancel SELL order scale when price reaches ", sets.StopLossLevel);
         }
     }
 }
@@ -1043,7 +1051,7 @@ void DoHalfPipSmallerPullbackEntry()
 {
     sets.EntryType = Pending;
 
-    // Make safe SL 20% smaller
+    // Make safe SL 0.5 pip smaller
     if (sets.TradeDirection == Long)
     {
         double smallerEntryPrice = iClose(NULL, PERIOD_M1, 1) - (_Point * 5);
@@ -1162,7 +1170,7 @@ void DoFetchWebCommands()
 void DoCloseAllOnEquityReach()
 {
     if (AccountInfoDouble(ACCOUNT_EQUITY) < CustomEquityGoal) return;
-
+    
     int total = PositionsTotal();
     if (total == 0) return;
 
@@ -1179,6 +1187,12 @@ void DoPreScaling()
     CustomCancelAtPrice = sets.StopLossLevel;
     CustomAlreadyUpdatedSL = false;
     CustomAlreadyScaled = false;
+
+    if (sets.TradeDirection == Long) {
+        CustomTradeSignal = "PENDING_BUY_SCALE";
+    } else {
+        CustomTradeSignal = "PENDING_SELL_SCALE";
+    }
 }
 
 void DoScaling()
@@ -1187,7 +1201,7 @@ void DoScaling()
     if (CustomCancelAtPrice == 0) return;
 
     // Allow to scale only once
-    if (CustomTradeSignal != "PENDING_SCALE_BUY" && CustomTradeSignal != "PENDING_SCALE_SELL") return;
+    if (CustomTradeSignal != "PENDING_BUY_SCALE" && CustomTradeSignal != "PENDING_SELL_SCALE") return;
 
     // Get the first position ticket
     ulong firstPositionTicket = PositionGetTicket(0);
@@ -1218,7 +1232,7 @@ void DoScaling()
 
     Trade();
 
-    if (CustomTradeSignal == "PENDING_SCALE_BUY") {
+    if (CustomTradeSignal == "PENDING_BUY_SCALE") {
         Print("Placed BUY scaled position");
     } else {
         Print("Placed SELL scaled position");
@@ -1558,7 +1572,8 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoHalfPipSmallerPullbackEntry();
+            DoPreScaling();
+            DoScaling();
         }
     }
 
