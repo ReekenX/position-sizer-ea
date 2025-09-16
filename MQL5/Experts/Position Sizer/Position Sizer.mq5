@@ -671,11 +671,7 @@ void OnTick()
 
     DoWaitConfirmationBar();
 
-    DoWaitDiscountAndTrade();
-
     DoCancelScaleIfNeeded();
-
-    DoScaling();
 
     DoUpdateScalingSL();
 
@@ -709,15 +705,12 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    if (shouldBuy) {
-        CustomTradeSignal = "PENDING_BUY";
-        ExtDialog.m_BtnOrderOnNextBar.Text("P");
-    } else {
-        CustomTradeSignal = "PENDING_SELL";
-        ExtDialog.m_BtnOrderOnNextBar.Text("P");
-    }
+    Trade();
 
-    DoHalfPipSmallerPullbackEntry();
+    CustomCancelAtPrice = sets.StopLossLevel;
+    CustomAlreadyUpdatedSL = false;
+
+    DoScaling();
 }
 
 void DoWaitDiscountAndTrade()
@@ -1197,12 +1190,6 @@ void DoPreScaling()
 
 void DoScaling()
 {
-    // Don't do anything if cancel price is not set
-    if (CustomCancelAtPrice == 0) return;
-
-    // Allow to scale only once
-    if (CustomTradeSignal != "PENDING_BUY_SCALE" && CustomTradeSignal != "PENDING_SELL_SCALE") return;
-
     // Get the first position ticket
     ulong firstPositionTicket = PositionGetTicket(0);
     if (firstPositionTicket == 0) return;
@@ -1232,7 +1219,7 @@ void DoScaling()
 
     Trade();
 
-    if (CustomTradeSignal == "PENDING_BUY_SCALE") {
+    if (sets.TradeDirection == Long) {
         Print("Placed BUY scaled position");
     } else {
         Print("Placed SELL scaled position");
