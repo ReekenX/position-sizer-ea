@@ -40,6 +40,7 @@ string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
+input bool CustomDoScaling = false; // Automatically scale trade when 1R is reached
 bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
 bool CustomAlreadyScaled = false; // If true, the position was already scaled
@@ -671,9 +672,10 @@ void OnTick()
 
     DoWaitConfirmationBar();
 
-    DoCancelScaleIfNeeded();
-
-    DoUpdateScalingSL();
+    if (CustomDoScaling) {
+        DoCancelScaleIfNeeded();
+        DoUpdateScalingSL();
+    }
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
@@ -707,10 +709,13 @@ void DoWaitConfirmationBar()
 
     Trade();
 
-    CustomCancelAtPrice = sets.StopLossLevel;
-    CustomAlreadyUpdatedSL = false;
+    if (CustomDoScaling) {
+        // Track metrics to cancel scaling idea if it fails
+        CustomCancelAtPrice = sets.StopLossLevel;
+        CustomAlreadyUpdatedSL = false;
 
-    DoScaling();
+        DoScaling();
+    }
 }
 
 void DoWaitDiscountAndTrade()
