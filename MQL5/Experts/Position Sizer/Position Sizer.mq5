@@ -707,7 +707,7 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    Trade();
+    DoPlaceSmallerEntry();
 
     if (CustomDoScaling) {
         // Track metrics to cancel scaling idea if it fails
@@ -1068,15 +1068,13 @@ void DoHalfPipSmallerPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
-void DoPendingPullbackEntry()
+void DoPlaceSmallerEntry()
 {
-    sets.EntryType = Pending;
-
-    // Make safe SL 20% smaller
+    // Make safe SL smaller
     if (sets.TradeDirection == Long)
     {
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
-        double smallerSLPrice = sets.StopLossLevel + (fullPriceRange * 0.2);
+        double smallerSLPrice = sets.StopLossLevel + (fullPriceRange * 0.1);
 
         ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
         ExtDialog.OnEndEditEdtSL();
@@ -1084,21 +1082,14 @@ void DoPendingPullbackEntry()
     else if (sets.TradeDirection == Short)
     {
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
-        double smallerSLPrice = sets.StopLossLevel - (fullPriceRange * 0.2);
+        double smallerSLPrice = sets.StopLossLevel - (fullPriceRange * 0.1);
 
         ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
         ExtDialog.OnEndEditEdtSL();
     }
 
-    // Go for 1R back and use that to set BE level
-    ExtDialog.OnClickBtnTakeProfitsNumberMinus();
-    ExtDialog.RefreshValues();
-    ExtDialog.m_EdtBreakEvenPoints.Text(ExtDialog.m_EdtTP.Text());
-    ExtDialog.OnEndEditEdtBreakEvenPoints();
-
-    // Set TP for initial idea
-    ExtDialog.OnClickBtnTakeProfitsNumberAdd();
-    ExtDialog.RefreshValues();
+    // Place a trade
+    Trade();
 }
 
 void DoFetchWebCommands()
@@ -1564,8 +1555,9 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoPreScaling();
-            DoScaling();
+            // DoPreScaling();
+            // DoScaling();
+            DoPlaceSmallerEntry();
         }
     }
 
