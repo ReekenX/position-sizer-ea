@@ -1075,6 +1075,9 @@ void DoPlaceLimitOrderOnTwoThirds()
     {
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
         double smallerEntryPrice = sets.StopLossLevel + (fullPriceRange / 3);
+        if ((fullPriceRange / 3) / _Point < 11) {
+            smallerEntryPrice = sets.StopLossLevel + (_Point * 11);
+        }
 
         ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
         ExtDialog.OnEndEditEdtEntryLevel();
@@ -1083,6 +1086,10 @@ void DoPlaceLimitOrderOnTwoThirds()
     {
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
         double smallerEntryPrice = sets.StopLossLevel - (fullPriceRange / 3);
+
+        if ((fullPriceRange / 3 / _Point) < 11) {
+            smallerEntryPrice = sets.StopLossLevel - (_Point * 11);
+        }
 
         ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
         ExtDialog.OnEndEditEdtEntryLevel();
