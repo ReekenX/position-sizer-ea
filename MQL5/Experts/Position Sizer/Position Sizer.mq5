@@ -707,7 +707,8 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    DoPlaceSmallerEntry();
+    DoPlaceLimitOrderOnTwoThirds();
+    Trade();
 
     if (CustomDoScaling) {
         // Track metrics to cancel scaling idea if it fails
@@ -1068,28 +1069,24 @@ void DoHalfPipSmallerPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
-void DoPlaceSmallerEntry()
+void DoPlaceLimitOrderOnTwoThirds()
 {
-    // Make safe SL smaller
     if (sets.TradeDirection == Long)
     {
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
-        double smallerSLPrice = sets.StopLossLevel + (fullPriceRange * 0.1);
+        double smallerEntryPrice = sets.StopLossLevel + (fullPriceRange / 3);
 
-        ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
-        ExtDialog.OnEndEditEdtSL();
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
     }
     else if (sets.TradeDirection == Short)
     {
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
-        double smallerSLPrice = sets.StopLossLevel - (fullPriceRange * 0.1);
+        double smallerEntryPrice = sets.StopLossLevel - (fullPriceRange / 3);
 
-        ExtDialog.m_EdtSL.Text(DoubleToString(smallerSLPrice, _Digits));
-        ExtDialog.OnEndEditEdtSL();
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
     }
-
-    // Place a trade
-    Trade();
 }
 
 void DoFetchWebCommands()
@@ -1555,9 +1552,7 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            // DoPreScaling();
-            // DoScaling();
-            DoPlaceSmallerEntry();
+            DoPlaceLimitOrderOnTwoThirds();
         }
     }
 
