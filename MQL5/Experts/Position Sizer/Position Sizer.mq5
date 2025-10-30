@@ -1071,6 +1071,9 @@ void DoHalfPipSmallerPullbackEntry()
 
 void DoPlaceLimitOrderOnTwoThirds()
 {
+    // Freeze price lines
+    sets.EntryType = Pending;
+
     if (sets.TradeDirection == Long)
     {
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
