@@ -707,7 +707,7 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    DoPlaceLimitOrderOnTwoThirds();
+    DoPlaceLimitOrderOnHalf();
     Trade();
 
     if (CustomDoScaling) {
@@ -1069,7 +1069,7 @@ void DoHalfPipSmallerPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
-void DoPlaceLimitOrderOnTwoThirds()
+void DoPlaceLimitOrderOnHalf()
 {
     // Freeze price lines
     sets.EntryType = Pending;
@@ -1077,7 +1077,7 @@ void DoPlaceLimitOrderOnTwoThirds()
     if (sets.TradeDirection == Long)
     {
         double fullPriceRange = sets.EntryLevel - sets.StopLossLevel;
-        double smallerEntryPrice = sets.StopLossLevel + (fullPriceRange / 3);
+        double smallerEntryPrice = sets.StopLossLevel + (fullPriceRange * 0.45);
         if ((fullPriceRange / 3) / _Point < 11) {
             smallerEntryPrice = sets.StopLossLevel + (_Point * 11);
         }
@@ -1088,7 +1088,7 @@ void DoPlaceLimitOrderOnTwoThirds()
     else if (sets.TradeDirection == Short)
     {
         double fullPriceRange = sets.StopLossLevel - sets.EntryLevel;
-        double smallerEntryPrice = sets.StopLossLevel - (fullPriceRange / 3);
+        double smallerEntryPrice = sets.StopLossLevel - (fullPriceRange * 0.45);
 
         if ((fullPriceRange / 3 / _Point) < 11) {
             smallerEntryPrice = sets.StopLossLevel - (_Point * 11);
@@ -1562,7 +1562,7 @@ void OnChartEvent(const int id,
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
             // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoPlaceLimitOrderOnTwoThirds();
+            DoPlaceLimitOrderOnHalf();
         }
     }
 
