@@ -710,6 +710,9 @@ void DoWaitConfirmationBar()
     DoPlaceLimitOrderOnHalf();
     Trade();
 
+    CustomTradeSignal = "NONE";
+    ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+
     if (CustomDoScaling) {
         // Track metrics to cancel scaling idea if it fails
         CustomCancelAtPrice = sets.StopLossLevel;
