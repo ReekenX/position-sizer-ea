@@ -35,7 +35,7 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double CustomTPMultiplier = 3;
+double CustomTPMultiplier = 1;
 string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
@@ -707,7 +707,14 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    DoPlaceLimitOrderOnHalf();
+    if (shouldBuy) {
+        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (20 * _Point), _Digits));
+        ExtDialog.OnEndEditEdtSL();
+    }
+    else if (shouldSell) {
+        ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (20 * _Point), _Digits));
+        ExtDialog.OnEndEditEdtSL();
+    }
     Trade();
 
     CustomTradeSignal = "NONE";
