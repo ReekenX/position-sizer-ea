@@ -39,7 +39,9 @@ double CustomTPMultiplier = 1;
 string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
+input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
+input bool CustomSetBEOn1R = false; // Set BE on 1R
 bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
 bool CustomAlreadyScaled = false; // If true, the position was already scaled
@@ -669,7 +671,7 @@ void OnTick()
 {
     ExtDialog.RefreshValues();
 
-    DoFetchWebCommands();
+    if (CustomWebFetchingEnabled) DoFetchWebCommands();
     DoWaitConfirmationBar();
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
@@ -711,6 +713,13 @@ void DoWaitConfirmationBar()
         ExtDialog.OnEndEditEdtSL();
     }
     Trade();
+
+    if (CustomSetBEOn1R) {
+        int slDistancePoints = (int)MathRound(MathAbs(sets.EntryLevel - sets.StopLossLevel) / _Point);
+        ExtDialog.m_EdtBreakEvenPoints.Text(IntegerToString(slDistancePoints));
+        ExtDialog.OnEndEditEdtBreakEvenPoints();
+        Print("BE set to 1R: ", slDistancePoints, " points");
+    }
 
     CustomTradeSignal = "NONE";
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
