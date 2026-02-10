@@ -40,7 +40,6 @@ string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
-input bool CustomDoScaling = false; // Automatically scale trade when 1R is reached
 bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
 bool CustomAlreadyScaled = false; // If true, the position was already scaled
@@ -670,12 +669,8 @@ void OnTick()
 {
     ExtDialog.RefreshValues();
 
+    DoFetchWebCommands();
     DoWaitConfirmationBar();
-
-    if (CustomDoScaling) {
-        DoCancelScaleIfNeeded();
-        DoUpdateScalingSL();
-    }
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 }
@@ -719,14 +714,6 @@ void DoWaitConfirmationBar()
 
     CustomTradeSignal = "NONE";
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
-
-    if (CustomDoScaling) {
-        // Track metrics to cancel scaling idea if it fails
-        CustomCancelAtPrice = sets.StopLossLevel;
-        CustomAlreadyUpdatedSL = false;
-
-        DoScaling();
-    }
 }
 
 void DoWaitDiscountAndTrade()
@@ -1142,8 +1129,9 @@ void DoFetchWebCommands()
         Print("RESET command received");
     } else if (CharArrayToString(result, 0, 3) == "BUY") {
         sets.TradeDirection = Long;
-        sets.EntryType = StopLimit;
-        ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
+        sets.EntryType = Instant;
+        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (100 * _Point), _Digits));
+        ExtDialog.OnEndEditEdtSL();
 
         CustomTradeSignal = "NONE";
         ExtDialog.OnClickBtnOrderOnNextBar();
@@ -1153,8 +1141,9 @@ void DoFetchWebCommands()
         Print("BUY command received");
     } else if (CharArrayToString(result, 0, 4) == "SELL") {
         sets.TradeDirection = Short;
-        sets.EntryType = StopLimit;
-        ExtDialog.OnClickBtnOrderType(); // This will shift StopLimit to Instant
+        sets.EntryType = Instant;
+        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) + (100 * _Point), _Digits));
+        ExtDialog.OnEndEditEdtSL();
 
         CustomTradeSignal = "NONE";
 
