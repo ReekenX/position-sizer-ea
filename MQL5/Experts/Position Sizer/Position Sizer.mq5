@@ -42,6 +42,7 @@ input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 input bool CustomSetBEOn1R = false; // Set BE on 1R
+input int CustomSafePips = 2; // Pips to add to the safe SL
 bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
 bool CustomAlreadyScaled = false; // If true, the position was already scaled
@@ -671,10 +672,18 @@ void OnTick()
 {
     ExtDialog.RefreshValues();
 
-    if (CustomWebFetchingEnabled) DoFetchWebCommands();
-    DoWaitConfirmationBar();
-
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
+
+    // Only trade London session
+    datetime currentTime = TimeCurrent();
+    MqlDateTime timeStruct;
+    TimeToStruct(currentTime, timeStruct);
+    int currentHour = timeStruct.hour;
+    int currentSecond = timeStruct.sec;
+    if (currentHour < 10 || currentHour > 19) return;
+
+    DoFetchWebCommands();
+    DoWaitConfirmationBar();
 }
 
 void DoCancelAutoTrade()
@@ -705,11 +714,11 @@ void DoWaitConfirmationBar()
     Print("Confirmation bar received for ", CustomTradeSignal);
 
     if (shouldBuy) {
-        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (20 * _Point), _Digits));
+        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (CustomSafePips * 10 * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
     }
     else if (shouldSell) {
-        ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (20 * _Point), _Digits));
+        ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (CustomSafePips * 10 * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
     }
     Trade();
@@ -1108,6 +1117,8 @@ void DoPlaceLimitOrderOnHalf()
 void DoFetchWebCommands()
 {
     if (CustomWebRequestInProgress) return;
+    if (!CustomWebFetchingEnabled) return;
+
     CustomWebRequestInProgress = true;
 
     datetime currentTime = TimeCurrent();
@@ -1116,7 +1127,7 @@ void DoFetchWebCommands()
     int currentHour = timeStruct.hour;
     int currentSecond = timeStruct.sec;
 
-    if (currentSecond % 10 != 0 || currentHour < 10 || currentHour > 19 || CustomWebCommandDomain == "https://www.example.org") {
+    if (currentSecond % 10 != 0 || CustomWebCommandDomain == "https://www.example.org") {
         CustomWebRequestInProgress = false;
         return;
     }
