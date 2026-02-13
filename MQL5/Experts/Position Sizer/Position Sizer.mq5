@@ -35,14 +35,14 @@ string PanelCaption = "";
 string PanelCaptionBase = "";
 
 // Custom variables:
-double CustomTPMultiplier = 1;
+double CustomTPMultiplier = 2;
 string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 input bool CustomSetBEOn1R = false; // Set BE on 1R
-input int CustomSafePips = 2; // Pips to add to the safe SL
+input int CustomSafeTicks = 20; // Ticks to add to the safe SL
 bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
 bool CustomAlreadyScaled = false; // If true, the position was already scaled
@@ -714,11 +714,11 @@ void DoWaitConfirmationBar()
     Print("Confirmation bar received for ", CustomTradeSignal);
 
     if (shouldBuy) {
-        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (CustomSafePips * 10 * _Point), _Digits));
+        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (CustomSafeTicks * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
     }
     else if (shouldSell) {
-        ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (CustomSafePips * 10 * _Point), _Digits));
+        ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (CustomSafeTicks * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
     }
     Trade();
