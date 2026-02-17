@@ -38,7 +38,7 @@ string PanelCaptionBase = "";
 double CustomTPMultiplier = 2;
 string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
-input double CustomEquityGoal = 5000; // Press 'G' to set TP to this equity
+input double CustomEquityGoal = 0; // Close all trades when equity reaches this (0 = disabled)
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 input bool CustomSetBEOn1R = false; // Set BE on 1R
@@ -684,6 +684,7 @@ void OnTick()
 
     DoFetchWebCommands();
     DoWaitConfirmationBar();
+    DoCloseAllOnEquityReach();
 }
 
 void DoCancelAutoTrade()
@@ -1184,17 +1185,34 @@ void DoFetchWebCommands()
 
 void DoCloseAllOnEquityReach()
 {
+    if (CustomEquityGoal <= 0) return;
     if (AccountInfoDouble(ACCOUNT_EQUITY) < CustomEquityGoal) return;
-    
+
     int total = PositionsTotal();
     if (total == 0) return;
 
-    PositionSelect(PositionGetSymbol(0));
+    Print("Equity reached goal: ", AccountInfoDouble(ACCOUNT_EQUITY), " >= ", CustomEquityGoal, ". Closing all positions.");
 
-    CTrade m_trade;
-    m_trade.PositionClose(PositionGetInteger(POSITION_TICKET), 3);
+    CTrade trade;
+    for (int i = total - 1; i >= 0; i--)
+    {
+        ulong ticket = PositionGetTicket(i);
+        if (ticket > 0)
+        {
+            trade.PositionClose(ticket, 3);
+        }
+    }
 
-    Print("Closing position because equity reached goal: ", CustomEquityGoal);
+    // Also delete pending orders
+    int orders = OrdersTotal();
+    for (int i = orders - 1; i >= 0; i--)
+    {
+        ulong ticket = OrderGetTicket(i);
+        if (ticket > 0)
+        {
+            trade.OrderDelete(ticket);
+        }
+    }
 }
 
 void DoPreScaling()
