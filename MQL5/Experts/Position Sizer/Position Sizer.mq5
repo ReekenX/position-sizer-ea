@@ -680,10 +680,11 @@ void OnTick()
     TimeToStruct(currentTime, timeStruct);
     int currentHour = timeStruct.hour;
     int currentSecond = timeStruct.sec;
-    if (currentHour < 10 || currentHour > 19) return;
+    if (currentHour >= 10 && currentHour <= 19) {
+        DoFetchWebCommands();
+        DoWaitConfirmationBar();
+    }
 
-    DoFetchWebCommands();
-    DoWaitConfirmationBar();
     DoCloseAllOnEquityReach();
 }
 
