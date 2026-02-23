@@ -715,13 +715,16 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    if (shouldBuy) {
-        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (CustomSafeTicks * _Point), _Digits));
-        ExtDialog.OnEndEditEdtSL();
-    }
-    else if (shouldSell) {
-        ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (CustomSafeTicks * _Point), _Digits));
-        ExtDialog.OnEndEditEdtSL();
+    // Use safe stop but add extra ticks
+    if (CustomSafeTicks > 0) {
+        if (shouldBuy) {
+            ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.OnEndEditEdtSL();
+        }
+        else if (shouldSell) {
+            ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.OnEndEditEdtSL();
+        }
     }
     Trade();
 
