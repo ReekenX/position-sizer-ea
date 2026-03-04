@@ -718,11 +718,11 @@ void DoWaitConfirmationBar()
     // Use safe stop but add extra ticks
     if (CustomSafeTicks > 0) {
         if (shouldBuy) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, PERIOD_M1, 1), MathMin(iLow(NULL, PERIOD_M1, 2), iLow(NULL, PERIOD_M1, 3))) - (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
         else if (shouldSell) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(iHigh(NULL, PERIOD_M1, 1) + (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, PERIOD_M1, 1), MathMax(iHigh(NULL, PERIOD_M1, 2), iHigh(NULL, PERIOD_M1, 3))) + (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
     }
