@@ -3,7 +3,7 @@ name: meta-trader
 startup_window: shell
 
 windows:
-  - editor: nvim
+  - editor: nvim .
   - shell:
   - claude:
       - alias run="tmux rename-window -t\${TMUX_PANE} 'claude'; clear; claude --dangerously-skip-permissions; tmux rename-window -t\${TMUX_PANE} '🔴 claude'"
