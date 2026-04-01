@@ -688,10 +688,7 @@ void OnTick()
     int currentSecond = timeStruct.sec;
     if (currentHour >= 10 && currentHour <= 19) {
         DoFetchWebCommands();
-        if (CustomStrategy == STRATEGY_15LS1CC_REGULAR)
-            DoWaitConfirmationBarOnRegular();
-        else
-            DoWaitConfirmationBarLimitOrder();
+        DoWaitConfirmationBar();
     }
 
     DoCloseAllOnEquityReach();
@@ -703,7 +700,7 @@ void DoCancelAutoTrade()
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 }
 
-void DoWaitConfirmationBarOnRegular()
+void DoWaitConfirmationBar()
 {
     // No trade signal, so we don't need to trade
     if (CustomTradeSignal != "BUY" && CustomTradeSignal != "SELL") return;
@@ -734,7 +731,18 @@ void DoWaitConfirmationBarOnRegular()
             ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, PERIOD_M1, 1), MathMax(iHigh(NULL, PERIOD_M1, 2), iHigh(NULL, PERIOD_M1, 3))) + (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
+
+        if (CustomStrategy == STRATEGY_15LS1CC_LIMIT_ORDER) {
+            double prevClose = iClose(NULL, PERIOD_M1, 1);
+            double midEntry = NormalizeDouble((sets.StopLossLevel + prevClose) / 2.0, _Digits);
+
+            sets.EntryType = Pending;
+            ExtDialog.m_EdtEntryLevel.Text(DoubleToString(midEntry, _Digits));
+            ExtDialog.OnEndEditEdtEntryLevel();
+            ExtDialog.RefreshValues();
+        }
     }
+
     Trade();
 
     if (CustomSetBEOn1R) {
@@ -746,14 +754,6 @@ void DoWaitConfirmationBarOnRegular()
 
     CustomTradeSignal = "NONE";
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
-}
-
-void DoWaitConfirmationBarLimitOrder()
-{
-    // No trade signal, so we don't need to trade
-    if (CustomTradeSignal != "BUY" && CustomTradeSignal != "SELL") return;
-
-    // TODO: Implement limit order trading rules
 }
 
 void DoWaitDiscountAndTrade()
