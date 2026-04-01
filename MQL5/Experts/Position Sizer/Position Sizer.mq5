@@ -47,6 +47,12 @@ bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
 bool CustomAlreadyScaled = false; // If true, the position was already scaled
 bool CustomAlreadyUpdatedSL = false; // If true, then both orders received middle SL
+enum ENUM_CUSTOM_STRATEGY
+{
+    STRATEGY_15LS1CC_REGULAR = 0,     // 15LS1CC Regular
+    STRATEGY_15LS1CC_LIMIT_ORDER = 1  // 15LS1CC Limit Order
+};
+input ENUM_CUSTOM_STRATEGY CustomStrategy = STRATEGY_15LS1CC_REGULAR; // CustomStrategy: Trading strategy
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -682,7 +688,10 @@ void OnTick()
     int currentSecond = timeStruct.sec;
     if (currentHour >= 10 && currentHour <= 19) {
         DoFetchWebCommands();
-        DoWaitConfirmationBar();
+        if (CustomStrategy == STRATEGY_15LS1CC_REGULAR)
+            DoWaitConfirmationBarOnRegular();
+        else
+            DoWaitConfirmationBarLimitOrder();
     }
 
     DoCloseAllOnEquityReach();
@@ -694,7 +703,7 @@ void DoCancelAutoTrade()
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
 }
 
-void DoWaitConfirmationBar()
+void DoWaitConfirmationBarOnRegular()
 {
     // No trade signal, so we don't need to trade
     if (CustomTradeSignal != "BUY" && CustomTradeSignal != "SELL") return;
@@ -737,6 +746,14 @@ void DoWaitConfirmationBar()
 
     CustomTradeSignal = "NONE";
     ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+}
+
+void DoWaitConfirmationBarLimitOrder()
+{
+    // No trade signal, so we don't need to trade
+    if (CustomTradeSignal != "BUY" && CustomTradeSignal != "SELL") return;
+
+    // TODO: Implement limit order trading rules
 }
 
 void DoWaitDiscountAndTrade()
