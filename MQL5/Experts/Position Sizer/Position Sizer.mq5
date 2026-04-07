@@ -41,7 +41,6 @@ datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 0; // Close all trades when equity reaches this (0 = disabled)
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
-input bool CustomSetBEOn1R = false; // Set BE on 1R
 input int CustomSafeTicks = 20; // Ticks to add to the safe SL
 bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
@@ -692,6 +691,8 @@ void OnTick()
         DoWaitConfirmationBar();
     }
 
+    DoCancelScaleIfNeeded();
+    DoUpdateScalingSL();
     DoCloseAllOnEquityReach();
 }
 
@@ -724,6 +725,7 @@ void DoWaitConfirmationBar()
 
     // Use safe stop but add extra ticks
     if (CustomSafeTicks > 0) {
+        // 15LS1CC Regular Strategy
         if (shouldBuy) {
             ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, PERIOD_M1, 1), MathMin(iLow(NULL, PERIOD_M1, 2), iLow(NULL, PERIOD_M1, 3))) - (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
@@ -733,6 +735,7 @@ void DoWaitConfirmationBar()
             ExtDialog.OnEndEditEdtSL();
         }
 
+        // 15LS1CC Limit Order Strategy
         if (CustomStrategy == STRATEGY_15LS1CC_LIMIT_ORDER) {
             double prevClose = iClose(NULL, PERIOD_M1, 1);
             double midEntry = NormalizeDouble((sets.StopLossLevel + prevClose) / 2.0, _Digits);
@@ -746,11 +749,12 @@ void DoWaitConfirmationBar()
 
     Trade();
 
-    if (CustomSetBEOn1R) {
-        int slDistancePoints = (int)MathRound(MathAbs(sets.EntryLevel - sets.StopLossLevel) / _Point);
-        ExtDialog.m_EdtBreakEvenPoints.Text(IntegerToString(slDistancePoints));
-        ExtDialog.OnEndEditEdtBreakEvenPoints();
-        Print("BE set to 1R: ", slDistancePoints, " points");
+    // 15LS1CC Scaling Strategy
+    if (CustomStrategy == STRATEGY_15LS1CC_SCALING) {
+        CustomCancelAtPrice = sets.StopLossLevel;
+        CustomAlreadyUpdatedSL = false;
+        DoScaling();
+        return;
     }
 
     CustomTradeSignal = "NONE";
@@ -811,7 +815,10 @@ void DoCancelScaleIfNeeded()
     
     // Check if there are any pending orders
     int totalOrders = OrdersTotal();
-    if (totalOrders == 0) return;
+    if (totalOrders == 0) {
+      CustomCancelAtPrice = 0;
+      return;
+    }
     
     // Check all pending orders
     bool shouldCancelOrders = false;
@@ -887,7 +894,10 @@ void DoUpdateScalingSL()
     if (CustomAlreadyUpdatedSL) return;
 
     // Only apply changes if script sees original and scaled order
-    if (PositionsTotal() != 2) return;
+    if (PositionsTotal() != 2) {
+        CustomAlreadyUpdatedSL = true;
+        return;
+    }
 
     // Get first executed order SL and TP
     if (!PositionGetTicket(0)) return;
@@ -1234,19 +1244,6 @@ void DoCloseAllOnEquityReach()
         {
             trade.OrderDelete(ticket);
         }
-    }
-}
-
-void DoPreScaling()
-{
-    CustomCancelAtPrice = sets.StopLossLevel;
-    CustomAlreadyUpdatedSL = false;
-    CustomAlreadyScaled = false;
-
-    if (sets.TradeDirection == Long) {
-        CustomTradeSignal = "PENDING_BUY_SCALE";
-    } else {
-        CustomTradeSignal = "PENDING_SELL_SCALE";
     }
 }
 
