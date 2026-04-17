@@ -893,8 +893,8 @@ void DoUpdateScalingSL()
     // If already updated SL, then don't do anything
     if (CustomAlreadyUpdatedSL) return;
 
-    // Only apply changes if script sees original and scaled order
     if (PositionsTotal() != 2) {
+        // Only apply changes if script sees original and scaled order
         CustomAlreadyUpdatedSL = true;
         return;
     }
@@ -913,8 +913,6 @@ void DoUpdateScalingSL()
     double middleSL = (firstSL + secondSL) / 2;
     double middleTP = (firstTP + secondTP) / 2;
 
-    Print("Updated both orders SL to ", middleSL, " and TP to ", middleTP);
-
     // Update first order SL
     ulong firstOrderTicket = PositionGetTicket(0);
     CTrade trade;
@@ -924,6 +922,8 @@ void DoUpdateScalingSL()
     ulong secondOrderTicket = PositionGetTicket(1);
     CTrade trade2;
     trade2.PositionModify(secondOrderTicket, middleSL, middleTP);
+
+    Print("Updated both orders SL to ", middleSL, " and TP to ", middleTP);
 
     CustomAlreadyUpdatedSL = true;
 }
