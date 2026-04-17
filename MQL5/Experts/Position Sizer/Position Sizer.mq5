@@ -893,9 +893,8 @@ void DoUpdateScalingSL()
     // If already updated SL, then don't do anything
     if (CustomAlreadyUpdatedSL) return;
 
+    // Scaled position might not yet be opened, so patiently wait
     if (PositionsTotal() != 2) {
-        // Only apply changes if script sees original and scaled order
-        CustomAlreadyUpdatedSL = true;
         return;
     }
 
