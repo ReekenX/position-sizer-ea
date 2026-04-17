@@ -1209,7 +1209,8 @@ void DoFetchWebCommands()
         // Disabled because very noisy
         // Print("HOLD command received");
     } else {
-        Print("Unknown command received: ", CharArrayToString(result));
+        // Disabled because HTTP requests sometimes return empty
+        // Print("Unknown command received: ", CharArrayToString(result));
     }
 
     CustomWebRequestInProgress = false;
