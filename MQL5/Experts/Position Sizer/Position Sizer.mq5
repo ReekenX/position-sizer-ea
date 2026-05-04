@@ -50,7 +50,7 @@ enum ENUM_CUSTOM_STRATEGY
 {
     STRATEGY_15LS1CC_REGULAR = 0,     // 15LS1CC Regular
     STRATEGY_15LS1CC_LIMIT_ORDER = 1, // 15LS1CC Limit Order
-    STRATEGY_15LS1CC_SCALING = 2      // 15LS1CC Scaling
+    STRATEGY_15LS1CC_SCALING_STOP = 2      // 15LS1CC Scaling
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = STRATEGY_15LS1CC_REGULAR; // CustomStrategy: Trading strategy
 
@@ -750,7 +750,7 @@ void DoWaitConfirmationBar()
     Trade();
 
     // 15LS1CC Scaling Strategy
-    if (CustomStrategy == STRATEGY_15LS1CC_SCALING) {
+    if (CustomStrategy == STRATEGY_15LS1CC_SCALING_STOP) {
         CustomCancelAtPrice = sets.StopLossLevel;
         CustomAlreadyUpdatedSL = false;
         DoScaling();
