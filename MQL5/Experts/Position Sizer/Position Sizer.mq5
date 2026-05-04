@@ -49,6 +49,7 @@ bool CustomAlreadyUpdatedSL = false; // If true, then both orders received middl
 bool CustomReentryWaitingFor1R = false; // If true, monitoring price for 1R level (reentry strategy)
 double CustomReentryOriginalEntry = 0; // Original entry price (reentry strategy)
 double CustomReentryOriginalSL = 0; // Original SL price (reentry strategy)
+double CustomReentry1RPrice = 0; // Commission-aware 1R price level used to trigger reentry
 bool CustomReentryDirectionLong = true; // Original trade direction (reentry strategy)
 enum ENUM_CUSTOM_STRATEGY
 {
@@ -765,17 +766,19 @@ void DoWaitConfirmationBar()
 
     // 15LS1CC Scaling Reentry Strategy
     if (CustomStrategy == STRATEGY_15LS1CC_SCALING_REENTRY) {
-        // Read actual entry/SL from the just-opened position so the 1R level is accurate.
-        if (PositionsTotal() > 0 && PositionGetTicket(0) > 0 && PositionSelect(PositionGetSymbol(0))) {
-            CustomReentryOriginalEntry = PositionGetDouble(POSITION_PRICE_OPEN);
-            CustomReentryOriginalSL = PositionGetDouble(POSITION_SL);
-        } else {
-            CustomReentryOriginalEntry = sets.EntryLevel;
-            CustomReentryOriginalSL = sets.StopLossLevel;
-        }
+        CustomReentryOriginalEntry = sets.EntryLevel;
+        CustomReentryOriginalSL = sets.StopLossLevel;
         CustomReentryDirectionLong = (sets.TradeDirection == Long);
+
+        // Compute commission-aware 1R price by setting RRR to 1:1.
+        for (int i = 0; i < 10; i++) {
+            ExtDialog.OnClickBtnTakeProfitsNumberMinus();
+        }
+        ExtDialog.RefreshValues();
+        CustomReentry1RPrice = sets.TakeProfitLevel;
+
         CustomReentryWaitingFor1R = true;
-        Print("Reentry: initial trade placed, waiting for 1R from ", CustomReentryOriginalEntry, " (SL: ", CustomReentryOriginalSL, ")");
+        Print("Reentry: initial trade placed, waiting for 1R level: ", CustomReentry1RPrice, " (SL: ", CustomReentryOriginalSL, ")");
         CustomTradeSignal = "NONE";
         ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         return;
@@ -1274,9 +1277,7 @@ void DoCloseAllOnEquityReach()
 void DoScalingReentryIfNeeded()
 {
     if (!CustomReentryWaitingFor1R) return;
-
-    double rDistance = MathAbs(CustomReentryOriginalEntry - CustomReentryOriginalSL);
-    if (rDistance <= 0) return;
+    if (CustomReentry1RPrice <= 0) return;
 
     if (CustomReentryDirectionLong) {
         double currentBid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
@@ -1286,7 +1287,7 @@ void DoScalingReentryIfNeeded()
             CustomReentryWaitingFor1R = false;
             return;
         }
-        if (currentBid >= CustomReentryOriginalEntry + rDistance) {
+        if (currentBid >= CustomReentry1RPrice) {
             Print("Reentry: 1R reached, placing two limit orders");
             DoPlaceReentryLimits();
             CustomReentryWaitingFor1R = false;
@@ -1298,7 +1299,7 @@ void DoScalingReentryIfNeeded()
             CustomReentryWaitingFor1R = false;
             return;
         }
-        if (currentAsk <= CustomReentryOriginalEntry - rDistance) {
+        if (currentAsk <= CustomReentry1RPrice) {
             Print("Reentry: 1R reached, placing two limit orders");
             DoPlaceReentryLimits();
             CustomReentryWaitingFor1R = false;
@@ -1311,45 +1312,43 @@ void DoPlaceReentryLimits()
     double rDistance = MathAbs(CustomReentryOriginalEntry - CustomReentryOriginalSL);
     if (rDistance <= 0) return;
 
-    double tpLevel;
-    double secondLimitSL;
+    double secondLimitSL = CustomReentryDirectionLong
+        ? CustomReentryOriginalSL - rDistance
+        : CustomReentryOriginalSL + rDistance;
 
-    if (CustomReentryDirectionLong) {
-        tpLevel = CustomReentryOriginalEntry + 4 * rDistance;
-        secondLimitSL = CustomReentryOriginalSL - rDistance;
-    } else {
-        tpLevel = CustomReentryOriginalEntry - 4 * rDistance;
-        secondLimitSL = CustomReentryOriginalSL + rDistance;
+    // Set RRR to 1:4 so the panel will compute commission-aware TP for each limit order.
+    for (int i = 0; i < 10; i++) {
+        ExtDialog.OnClickBtnTakeProfitsNumberMinus();
+    }
+    for (int i = 0; i < 3; i++) {
+        ExtDialog.OnClickBtnTakeProfitsNumberAdd();
     }
 
     sets.EntryType = Pending;
 
-    // Limit 1: entry at original ENTRY, SL at original SL, TP at 4R from original entry.
+    // Limit 1: entry at original ENTRY, SL at original SL.
     ExtDialog.m_EdtEntryLevel.Text(DoubleToString(CustomReentryOriginalEntry, _Digits));
     ExtDialog.OnEndEditEdtEntryLevel();
     ExtDialog.m_EdtSL.Text(DoubleToString(CustomReentryOriginalSL, _Digits));
     ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
-    sets.TakeProfitLevel = NormalizeDouble(tpLevel, _Digits);
     Trade();
 
-    // Limit 2: entry at original SL, SL one R below (or above for shorts), TP at 4R from original entry.
+    // Limit 2: entry at original SL, SL one R below (or above for shorts).
     ExtDialog.m_EdtEntryLevel.Text(DoubleToString(CustomReentryOriginalSL, _Digits));
     ExtDialog.OnEndEditEdtEntryLevel();
     ExtDialog.m_EdtSL.Text(DoubleToString(secondLimitSL, _Digits));
     ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
-    sets.TakeProfitLevel = NormalizeDouble(tpLevel, _Digits);
     Trade();
 
-    // Set the cancel-scale level to limit 2's SL so both limits have a chance to fill.
-    // If price drops past secondLimitSL, any remaining pending orders will be cancelled.
+    // Pending orders are cancelled if price reaches limit 2's SL, so both limits can still fill.
     CustomCancelAtPrice = secondLimitSL;
 
     if (CustomReentryDirectionLong) {
-        Print("Reentry: placed BUY LIMIT at ", CustomReentryOriginalEntry, " and ", CustomReentryOriginalSL, ", TP=", tpLevel, ", cancel-scale=", secondLimitSL);
+        Print("Reentry: placed BUY LIMITs at ", CustomReentryOriginalEntry, " and ", CustomReentryOriginalSL, ", cancel-scale=", secondLimitSL);
     } else {
-        Print("Reentry: placed SELL LIMIT at ", CustomReentryOriginalEntry, " and ", CustomReentryOriginalSL, ", TP=", tpLevel, ", cancel-scale=", secondLimitSL);
+        Print("Reentry: placed SELL LIMITs at ", CustomReentryOriginalEntry, " and ", CustomReentryOriginalSL, ", cancel-scale=", secondLimitSL);
     }
 }
 
