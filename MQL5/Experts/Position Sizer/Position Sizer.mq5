@@ -1245,7 +1245,8 @@ void DoFetchWebCommands()
 void DoCloseAllOnEquityReach()
 {
     if (CustomEquityGoal <= 0) return;
-    if (AccountInfoDouble(ACCOUNT_EQUITY) < CustomEquityGoal) return;
+    // Buffer for slippage on close so realized equity still meets the goal.
+    if (AccountInfoDouble(ACCOUNT_EQUITY) < CustomEquityGoal + 5.0) return;
 
     int total = PositionsTotal();
     if (total == 0) return;
