@@ -46,11 +46,16 @@ bool CustomWebRequestInProgress = false;
 double CustomCancelAtPrice = 0; // Cancel position when this price is reached
 bool CustomAlreadyScaled = false; // If true, the position was already scaled
 bool CustomAlreadyUpdatedSL = false; // If true, then both orders received middle SL
+bool CustomReentryWaitingFor1R = false; // If true, monitoring price for 1R level (reentry strategy)
+double CustomReentryOriginalEntry = 0; // Original entry price (reentry strategy)
+double CustomReentryOriginalSL = 0; // Original SL price (reentry strategy)
+bool CustomReentryDirectionLong = true; // Original trade direction (reentry strategy)
 enum ENUM_CUSTOM_STRATEGY
 {
-    STRATEGY_15LS1CC_REGULAR = 0,     // 15LS1CC Regular
-    STRATEGY_15LS1CC_LIMIT_ORDER = 1, // 15LS1CC Limit Order
-    STRATEGY_15LS1CC_SCALING_STOP = 2      // 15LS1CC Scaling
+    STRATEGY_15LS1CC_REGULAR = 0,         // 15LS1CC Regular
+    STRATEGY_15LS1CC_LIMIT_ORDER = 1,     // 15LS1CC Limit Order
+    STRATEGY_15LS1CC_SCALING_STOP = 2,    // 15LS1CC Scaling Stop
+    STRATEGY_15LS1CC_SCALING_REENTRY = 3  // 15LS1CC Scaling Reentry
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = STRATEGY_15LS1CC_REGULAR; // CustomStrategy: Trading strategy
 
@@ -692,6 +697,7 @@ void OnTick()
     }
 
     DoCancelScaleIfNeeded();
+    DoScalingReentryIfNeeded();
     DoUpdateScalingSL();
     DoCloseAllOnEquityReach();
 }
@@ -754,6 +760,24 @@ void DoWaitConfirmationBar()
         CustomCancelAtPrice = sets.StopLossLevel;
         CustomAlreadyUpdatedSL = false;
         DoScaling();
+        return;
+    }
+
+    // 15LS1CC Scaling Reentry Strategy
+    if (CustomStrategy == STRATEGY_15LS1CC_SCALING_REENTRY) {
+        // Read actual entry/SL from the just-opened position so the 1R level is accurate.
+        if (PositionsTotal() > 0 && PositionGetTicket(0) > 0 && PositionSelect(PositionGetSymbol(0))) {
+            CustomReentryOriginalEntry = PositionGetDouble(POSITION_PRICE_OPEN);
+            CustomReentryOriginalSL = PositionGetDouble(POSITION_SL);
+        } else {
+            CustomReentryOriginalEntry = sets.EntryLevel;
+            CustomReentryOriginalSL = sets.StopLossLevel;
+        }
+        CustomReentryDirectionLong = (sets.TradeDirection == Long);
+        CustomReentryWaitingFor1R = true;
+        Print("Reentry: initial trade placed, waiting for 1R from ", CustomReentryOriginalEntry, " (SL: ", CustomReentryOriginalSL, ")");
+        CustomTradeSignal = "NONE";
+        ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         return;
     }
 
@@ -1244,6 +1268,88 @@ void DoCloseAllOnEquityReach()
         {
             trade.OrderDelete(ticket);
         }
+    }
+}
+
+void DoScalingReentryIfNeeded()
+{
+    if (!CustomReentryWaitingFor1R) return;
+
+    double rDistance = MathAbs(CustomReentryOriginalEntry - CustomReentryOriginalSL);
+    if (rDistance <= 0) return;
+
+    if (CustomReentryDirectionLong) {
+        double currentBid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+        // Abort reentry if price returned to the original SL before 1R was reached.
+        if (currentBid <= CustomReentryOriginalSL) {
+            Print("Reentry: cancel-scale price reached before 1R, no reentry will be placed");
+            CustomReentryWaitingFor1R = false;
+            return;
+        }
+        if (currentBid >= CustomReentryOriginalEntry + rDistance) {
+            Print("Reentry: 1R reached, placing two limit orders");
+            DoPlaceReentryLimits();
+            CustomReentryWaitingFor1R = false;
+        }
+    } else {
+        double currentAsk = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+        if (currentAsk >= CustomReentryOriginalSL) {
+            Print("Reentry: cancel-scale price reached before 1R, no reentry will be placed");
+            CustomReentryWaitingFor1R = false;
+            return;
+        }
+        if (currentAsk <= CustomReentryOriginalEntry - rDistance) {
+            Print("Reentry: 1R reached, placing two limit orders");
+            DoPlaceReentryLimits();
+            CustomReentryWaitingFor1R = false;
+        }
+    }
+}
+
+void DoPlaceReentryLimits()
+{
+    double rDistance = MathAbs(CustomReentryOriginalEntry - CustomReentryOriginalSL);
+    if (rDistance <= 0) return;
+
+    double tpLevel;
+    double secondLimitSL;
+
+    if (CustomReentryDirectionLong) {
+        tpLevel = CustomReentryOriginalEntry + 4 * rDistance;
+        secondLimitSL = CustomReentryOriginalSL - rDistance;
+    } else {
+        tpLevel = CustomReentryOriginalEntry - 4 * rDistance;
+        secondLimitSL = CustomReentryOriginalSL + rDistance;
+    }
+
+    sets.EntryType = Pending;
+
+    // Limit 1: entry at original ENTRY, SL at original SL, TP at 4R from original entry.
+    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(CustomReentryOriginalEntry, _Digits));
+    ExtDialog.OnEndEditEdtEntryLevel();
+    ExtDialog.m_EdtSL.Text(DoubleToString(CustomReentryOriginalSL, _Digits));
+    ExtDialog.OnEndEditEdtSL();
+    ExtDialog.RefreshValues();
+    sets.TakeProfitLevel = NormalizeDouble(tpLevel, _Digits);
+    Trade();
+
+    // Limit 2: entry at original SL, SL one R below (or above for shorts), TP at 4R from original entry.
+    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(CustomReentryOriginalSL, _Digits));
+    ExtDialog.OnEndEditEdtEntryLevel();
+    ExtDialog.m_EdtSL.Text(DoubleToString(secondLimitSL, _Digits));
+    ExtDialog.OnEndEditEdtSL();
+    ExtDialog.RefreshValues();
+    sets.TakeProfitLevel = NormalizeDouble(tpLevel, _Digits);
+    Trade();
+
+    // Set the cancel-scale level to limit 2's SL so both limits have a chance to fill.
+    // If price drops past secondLimitSL, any remaining pending orders will be cancelled.
+    CustomCancelAtPrice = secondLimitSL;
+
+    if (CustomReentryDirectionLong) {
+        Print("Reentry: placed BUY LIMIT at ", CustomReentryOriginalEntry, " and ", CustomReentryOriginalSL, ", TP=", tpLevel, ", cancel-scale=", secondLimitSL);
+    } else {
+        Print("Reentry: placed SELL LIMIT at ", CustomReentryOriginalEntry, " and ", CustomReentryOriginalSL, ", TP=", tpLevel, ", cancel-scale=", secondLimitSL);
     }
 }
 
