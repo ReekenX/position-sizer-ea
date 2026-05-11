@@ -1329,20 +1329,13 @@ void DoPlaceReentryLimits()
 
     sets.EntryType = Pending;
 
-    // Limit 1: entry at original ENTRY, SL at original SL.
+    // Entry at original ENTRY, SL at original SL.
     ExtDialog.m_EdtEntryLevel.Text(DoubleToString(CustomReentryOriginalEntry, _Digits));
     ExtDialog.OnEndEditEdtEntryLevel();
     ExtDialog.m_EdtSL.Text(DoubleToString(CustomReentryOriginalSL, _Digits));
     ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
     Trade();
-
-    // Limit 2: entry at original SL, SL one R below (or above for shorts).
-    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(CustomReentryOriginalSL, _Digits));
-    ExtDialog.OnEndEditEdtEntryLevel();
-    ExtDialog.m_EdtSL.Text(DoubleToString(secondLimitSL, _Digits));
-    ExtDialog.OnEndEditEdtSL();
-    ExtDialog.RefreshValues();
     Trade();
 
     // Pending orders are cancelled if price reaches limit 2's SL, so both limits can still fill.
