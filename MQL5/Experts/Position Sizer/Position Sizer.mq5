@@ -917,6 +917,8 @@ void DoDeletePendingOrders()
 
 void DoUpdateScalingSL()
 {
+    if (CustomStrategy != STRATEGY_15LS1CC_SCALING_STOP) return;
+
     // If already updated SL, then don't do anything
     if (CustomAlreadyUpdatedSL) return;
 
