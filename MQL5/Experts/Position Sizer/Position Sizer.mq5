@@ -754,6 +754,13 @@ void DoWaitConfirmationBar()
         }
     }
 
+    // This type of trading must be always on 1R
+    if (CustomStrategy == STRATEGY_15LS1CC_SCALING_REENTRY) {
+      for (int i = 0; i < 10; i++) {
+          ExtDialog.OnClickBtnTakeProfitsNumberMinus();
+      }
+    }
+
     Trade();
 
     // 15LS1CC Scaling Strategy
