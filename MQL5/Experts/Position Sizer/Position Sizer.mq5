@@ -686,17 +686,8 @@ void OnTick()
 
     if (sets.TrailingStopPoints > 0) DoTrailingStop();
 
-    // Only trade London session
-    datetime currentTime = TimeCurrent();
-    MqlDateTime timeStruct;
-    TimeToStruct(currentTime, timeStruct);
-    int currentHour = timeStruct.hour;
-    int currentSecond = timeStruct.sec;
-    if (currentHour >= 10 && currentHour < 19) {
-        DoFetchWebCommands();
-        DoWaitConfirmationBar();
-    }
-
+    DoFetchWebCommands();
+    DoWaitConfirmationBar();
     DoCancelScaleIfNeeded();
     DoScalingReentryIfNeeded();
     DoUpdateScalingSL();
@@ -1221,8 +1212,16 @@ void DoFetchWebCommands()
         ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (100 * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
 
-        CustomTradeSignal = "NONE";
-        ExtDialog.OnClickBtnOrderOnNextBar();
+        // Only trade London session
+        datetime currentTime = TimeCurrent();
+        MqlDateTime timeStruct;
+        TimeToStruct(currentTime, timeStruct);
+        int currentHour = timeStruct.hour;
+        int currentSecond = timeStruct.sec;
+        if (currentHour >= 10 && currentHour < 19) {
+            CustomTradeSignal = "NONE";
+            ExtDialog.OnClickBtnOrderOnNextBar();
+        }
 
         WebRequest("GET", CustomWebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
@@ -1233,9 +1232,16 @@ void DoFetchWebCommands()
         ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) + (100 * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
 
-        CustomTradeSignal = "NONE";
-
-        ExtDialog.OnClickBtnOrderOnNextBar();
+        // Only trade London session
+        datetime currentTime = TimeCurrent();
+        MqlDateTime timeStruct;
+        TimeToStruct(currentTime, timeStruct);
+        int currentHour = timeStruct.hour;
+        int currentSecond = timeStruct.sec;
+        if (currentHour >= 10 && currentHour < 19) {
+            CustomTradeSignal = "NONE";
+            ExtDialog.OnClickBtnOrderOnNextBar();
+        }
 
         WebRequest("GET", CustomWebCommandDomain + "/set/HOLD", NULL, NULL, 3000, data, 0, result, headers);
 
