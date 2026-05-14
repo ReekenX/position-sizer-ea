@@ -750,6 +750,7 @@ void DoWaitConfirmationBar()
       for (int i = 0; i < 10; i++) {
           ExtDialog.OnClickBtnTakeProfitsNumberMinus();
       }
+      ExtDialog.ProcessTPChange(false);
     }
 
     Trade();
@@ -768,11 +769,12 @@ void DoWaitConfirmationBar()
         CustomReentryOriginalSL = sets.StopLossLevel;
         CustomReentryDirectionLong = (sets.TradeDirection == Long);
 
-        // Compute commission-aware 1R price by setting RRR to 1:1.
+        // This type of trading must be always on 1R
         for (int i = 0; i < 10; i++) {
             ExtDialog.OnClickBtnTakeProfitsNumberMinus();
         }
         ExtDialog.RefreshValues();
+        ExtDialog.ProcessTPChange(false);
         CustomReentry1RPrice = sets.TakeProfitLevel;
 
         CustomReentryWaitingFor1R = true;
@@ -1348,6 +1350,7 @@ void DoPlaceReentryLimits()
     ExtDialog.m_EdtSL.Text(DoubleToString(CustomReentryOriginalSL, _Digits));
     ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
+    ExtDialog.ProcessTPChange(false);
     Trade();
     Trade();
 
