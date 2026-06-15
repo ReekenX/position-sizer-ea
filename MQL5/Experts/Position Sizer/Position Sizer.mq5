@@ -937,21 +937,27 @@ void DoUpdateScalingSL()
     double secondSL = PositionGetDouble(POSITION_SL);
     double secondTP = PositionGetDouble(POSITION_TP);
 
-    // Get price between first and second order SL and TP
-    double middleSL = (firstSL + secondSL) / 2;
+    // Combined max loss is linear in the common stop X = firstSL + t*(secondSL - firstSL):
+    //   loss(t) = (3 - 2t) * R    ->  t = (3 - targetR) / 2
+    //   t = 1.0  -> 1R   (common stop at original entry)
+    //   t = 0.5  -> 2R   (old midpoint behaviour)
+    //   t = 0.75 -> 1.5R
+    double targetR  = 1.5;                                  // desired combined max loss, in R
+    double t        = (3.0 - targetR) / 2.0;                // 0.75 for 1.5R
+    double targetSL = firstSL + t * (secondSL - firstSL);
     double middleTP = (firstTP + secondTP) / 2;
 
     // Update first order SL
     ulong firstOrderTicket = PositionGetTicket(0);
     CTrade trade;
-    trade.PositionModify(firstOrderTicket, middleSL, middleTP);
+    trade.PositionModify(firstOrderTicket, targetSL, middleTP);
 
     // Update second order SL
     ulong secondOrderTicket = PositionGetTicket(1);
     CTrade trade2;
-    trade2.PositionModify(secondOrderTicket, middleSL, middleTP);
+    trade2.PositionModify(secondOrderTicket, targetSL, middleTP);
 
-    Print("Updated both orders SL to ", middleSL, " and TP to ", middleTP);
+    Print("Updated both orders SL to ", targetSL, " and TP to ", middleTP, " (targetR=", targetR, ")");
 
     CustomAlreadyUpdatedSL = true;
 }
