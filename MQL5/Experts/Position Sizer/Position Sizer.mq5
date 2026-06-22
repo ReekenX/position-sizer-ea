@@ -59,6 +59,8 @@ enum ENUM_CUSTOM_STRATEGY
     STRATEGY_15LS1CC_SCALING_REENTRY = 3  // 15LS1CC Scaling Reentry
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = STRATEGY_15LS1CC_REGULAR; // CustomStrategy: Trading strategy
+input int CustomMinSL = 10; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
+input int CustomMaxSL = 100; // CustomMaxSL: Max SL distance (ticks) from entry to allow trade
 
 input group "Compactness"
 input bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -751,6 +753,14 @@ void DoWaitConfirmationBar()
           ExtDialog.OnClickBtnTakeProfitsNumberMinus();
       }
       ExtDialog.ProcessTPChange(false);
+    }
+
+    // Skip trade if SL distance from entry is outside the allowed range
+    double slDistanceTicks = MathAbs(sets.EntryLevel - sets.StopLossLevel) / _Point;
+    if (slDistanceTicks < CustomMinSL || slDistanceTicks > CustomMaxSL) {
+        Print("Skipping trade: SL distance ", slDistanceTicks, " ticks is outside allowed range [", CustomMinSL, ", ", CustomMaxSL, "]");
+        CustomTradeSignal = "NONE";
+        return;
     }
 
     Trade();
