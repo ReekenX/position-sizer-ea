@@ -1750,8 +1750,16 @@ void OnChartEvent(const int id,
         }
         else if ((MainKey_SetAdjustEntryHotKey != 0) && (lparam == MainKey_FindClosestSLHotKey))
         {
-            // NOTE: Shortcut SHIFT+O is reserved for testing various custom methods.
-            DoPlaceLimitOrderOnHalf();
+            if (CustomSafeTicks > 0) {
+                if (sets.TradeDirection == Long) {
+                    ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel - (CustomSafeTicks * _Point), _Digits));
+                    ExtDialog.OnEndEditEdtSL();
+                }
+                else {
+                    ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel + (CustomSafeTicks * _Point), _Digits));
+                    ExtDialog.OnEndEditEdtSL();
+                }
+            }
         }
     }
 
