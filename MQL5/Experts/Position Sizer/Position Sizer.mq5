@@ -57,10 +57,10 @@ enum ENUM_CUSTOM_STRATEGY
     CUSTOM_STRATEGY_LIMIT_ORDER = 1,      // Limit Order – safe SL and Entry is in the middle
     CUSTOM_STRATEGY_SCALING_STOP = 2,     // Scaling Stop – immediately open STOP trade at 1R
     CUSTOM_STRATEGY_SCALING_REENTRY = 3,  // Scaling Reentry – open second trade at 1R
-    CUSTOM_STRATEGY_AGGRESSIVE = 4        // Aggressive – safe SL and 11 ticks entry
+    CUSTOM_STRATEGY_AGGRESSIVE = 4        // Aggressive – safe SL and CustomMinSL ticks entry
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = CUSTOM_STRATEGY_REGULAR; // CustomStrategy: Trading strategy
-input int CustomMinSL = 10; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
+input int CustomMinSL = 11; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
 input int CustomMaxSL = 100; // CustomMaxSL: Max SL distance (ticks) from entry to allow trade
 
 input group "Compactness"
@@ -749,8 +749,8 @@ void DoWaitConfirmationBar()
 
         // Aggressive Strategy: entry sits 11 ticks away from the safe SL.
         if (CustomStrategy == CUSTOM_STRATEGY_AGGRESSIVE) {
-            double aggressiveEntry = shouldBuy ? sets.StopLossLevel + (11 * _Point)
-                                               : sets.StopLossLevel - (11 * _Point);
+            double aggressiveEntry = shouldBuy ? sets.StopLossLevel + (CustomMinSL * _Point)
+                                               : sets.StopLossLevel - (CustomMinSL * _Point);
             aggressiveEntry = NormalizeDouble(aggressiveEntry, _Digits);
 
             sets.EntryType = Pending;
