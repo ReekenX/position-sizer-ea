@@ -53,10 +53,10 @@ double CustomReentry1RPrice = 0; // Commission-aware 1R price level used to trig
 bool CustomReentryDirectionLong = true; // Original trade direction (reentry strategy)
 enum ENUM_CUSTOM_STRATEGY
 {
-    CUSTOM_STRATEGY_REGULAR = 0,         // Regular
-    CUSTOM_STRATEGY_LIMIT_ORDER = 1,     // Limit Order
-    CUSTOM_STRATEGY_SCALING_STOP = 2,    // Scaling Stop
-    CUSTOM_STRATEGY_SCALING_REENTRY = 3, // Scaling Reentry
+    CUSTOM_STRATEGY_REGULAR = 0,          // Regular
+    CUSTOM_STRATEGY_LIMIT_ORDER = 1,      // Limit Order
+    CUSTOM_STRATEGY_SCALING_STOP = 2,     // Scaling Stop
+    CUSTOM_STRATEGY_SCALING_REENTRY = 3,  // Scaling Reentry
     CUSTOM_STRATEGY_AGGRESSIVE = 4        // Aggressive
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = CUSTOM_STRATEGY_REGULAR; // CustomStrategy: Trading strategy
