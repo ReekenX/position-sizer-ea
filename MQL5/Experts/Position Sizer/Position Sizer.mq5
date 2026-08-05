@@ -54,10 +54,10 @@ bool CustomReentryDirectionLong = true; // Original trade direction (reentry str
 enum ENUM_CUSTOM_STRATEGY
 {
     CUSTOM_STRATEGY_REGULAR = 0,          // Regular
-    CUSTOM_STRATEGY_LIMIT_ORDER = 1,      // Limit Order
-    CUSTOM_STRATEGY_SCALING_STOP = 2,     // Scaling Stop
-    CUSTOM_STRATEGY_SCALING_REENTRY = 3,  // Scaling Reentry
-    CUSTOM_STRATEGY_AGGRESSIVE = 4        // Aggressive
+    CUSTOM_STRATEGY_LIMIT_ORDER = 1,      // Limit Order – safe SL and Entry is in the middle
+    CUSTOM_STRATEGY_SCALING_STOP = 2,     // Scaling Stop – immediately open STOP trade at 1R
+    CUSTOM_STRATEGY_SCALING_REENTRY = 3,  // Scaling Reentry – open second trade at 1R
+    CUSTOM_STRATEGY_AGGRESSIVE = 4        // Aggressive – safe SL and 11 ticks entry
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = CUSTOM_STRATEGY_REGULAR; // CustomStrategy: Trading strategy
 input int CustomMinSL = 10; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
