@@ -53,12 +53,12 @@ double CustomReentry1RPrice = 0; // Commission-aware 1R price level used to trig
 bool CustomReentryDirectionLong = true; // Original trade direction (reentry strategy)
 enum ENUM_CUSTOM_STRATEGY
 {
-    STRATEGY_15LS1CC_REGULAR = 0,         // 15LS1CC Regular
-    STRATEGY_15LS1CC_LIMIT_ORDER = 1,     // 15LS1CC Limit Order
-    STRATEGY_15LS1CC_SCALING_STOP = 2,    // 15LS1CC Scaling Stop
-    STRATEGY_15LS1CC_SCALING_REENTRY = 3  // 15LS1CC Scaling Reentry
+    CUSTOM_STRATEGY_REGULAR = 0,         // Regular
+    CUSTOM_STRATEGY_LIMIT_ORDER = 1,     // Limit Order
+    CUSTOM_STRATEGY_SCALING_STOP = 2,    // Scaling Stop
+    CUSTOM_STRATEGY_SCALING_REENTRY = 3  // Scaling Reentry
 };
-input ENUM_CUSTOM_STRATEGY CustomStrategy = STRATEGY_15LS1CC_REGULAR; // CustomStrategy: Trading strategy
+input ENUM_CUSTOM_STRATEGY CustomStrategy = CUSTOM_STRATEGY_REGULAR; // CustomStrategy: Trading strategy
 input int CustomMinSL = 10; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
 input int CustomMaxSL = 100; // CustomMaxSL: Max SL distance (ticks) from entry to allow trade
 
@@ -725,7 +725,7 @@ void DoWaitConfirmationBar()
 
     // Use safe stop but add extra ticks
     if (CustomSafeTicks > 0) {
-        // 15LS1CC Regular Strategy
+        // Regular Strategy
         if (shouldBuy) {
             ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, Period(), 1), MathMin(iLow(NULL, Period(), 2), iLow(NULL, Period(), 3))) - (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
@@ -735,8 +735,8 @@ void DoWaitConfirmationBar()
             ExtDialog.OnEndEditEdtSL();
         }
 
-        // 15LS1CC Limit Order Strategy
-        if (CustomStrategy == STRATEGY_15LS1CC_LIMIT_ORDER) {
+        // Limit Order Strategy
+        if (CustomStrategy == CUSTOM_STRATEGY_LIMIT_ORDER) {
             double prevClose = iClose(NULL, Period(), 1);
             double midEntry = NormalizeDouble((sets.StopLossLevel + prevClose) / 2.0, _Digits);
 
@@ -748,7 +748,7 @@ void DoWaitConfirmationBar()
     }
 
     // This type of trading must be always on 1R
-    if (CustomStrategy == STRATEGY_15LS1CC_SCALING_REENTRY) {
+    if (CustomStrategy == CUSTOM_STRATEGY_SCALING_REENTRY) {
       for (int i = 0; i < 10; i++) {
           ExtDialog.OnClickBtnTakeProfitsNumberMinus();
       }
@@ -765,16 +765,16 @@ void DoWaitConfirmationBar()
 
     Trade();
 
-    // 15LS1CC Scaling Strategy
-    if (CustomStrategy == STRATEGY_15LS1CC_SCALING_STOP) {
+    // Scaling Strategy
+    if (CustomStrategy == CUSTOM_STRATEGY_SCALING_STOP) {
         CustomCancelAtPrice = sets.StopLossLevel;
         CustomAlreadyUpdatedSL = false;
         DoScaling();
         return;
     }
 
-    // 15LS1CC Scaling Reentry Strategy
-    if (CustomStrategy == STRATEGY_15LS1CC_SCALING_REENTRY) {
+    // Scaling Reentry Strategy
+    if (CustomStrategy == CUSTOM_STRATEGY_SCALING_REENTRY) {
         CustomReentryOriginalEntry = sets.EntryLevel;
         CustomReentryOriginalSL = sets.StopLossLevel;
         CustomReentryDirectionLong = (sets.TradeDirection == Long);
@@ -927,7 +927,7 @@ void DoDeletePendingOrders()
 
 void DoUpdateScalingSL()
 {
-    if (CustomStrategy != STRATEGY_15LS1CC_SCALING_STOP) return;
+    if (CustomStrategy != CUSTOM_STRATEGY_SCALING_STOP) return;
 
     // If already updated SL, then don't do anything
     if (CustomAlreadyUpdatedSL) return;
