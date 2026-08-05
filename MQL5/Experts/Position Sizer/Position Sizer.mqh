@@ -3602,7 +3602,7 @@ void CPositionSizeCalculator::OnClickBtnOrderOnNextBar()
         m_BtnOrderOnNextBar.Text("S");
     }
 
-    CustomCurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+    CustomCurrentBarIndex = iTime(NULL, Period(), 0);
 }
 
 void CPositionSizeCalculator::OnClickBtnTakeProfitsNumberMinus()

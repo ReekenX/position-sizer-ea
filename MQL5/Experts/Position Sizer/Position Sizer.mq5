@@ -708,13 +708,13 @@ void DoWaitConfirmationBar()
     if (CustomTradeSignal != "BUY" && CustomTradeSignal != "SELL") return;
 
     // Ensure this function is called once per bar
-    if (CustomCurrentBarIndex == iTime(NULL, PERIOD_M1, 0)) {
+    if (CustomCurrentBarIndex == iTime(NULL, Period(), 0)) {
         return;
     }
-    CustomCurrentBarIndex = iTime(NULL, PERIOD_M1, 0);
+    CustomCurrentBarIndex = iTime(NULL, Period(), 0);
 
     // Check if confirmation bar received
-    bool isBuyBar = iClose(NULL, PERIOD_M1, 1) > iOpen(NULL, PERIOD_M1, 1);
+    bool isBuyBar = iClose(NULL, Period(), 1) > iOpen(NULL, Period(), 1);
     bool shouldBuy = CustomTradeSignal == "BUY" && sets.TradeDirection == Long && isBuyBar;
     bool shouldSell = CustomTradeSignal == "SELL" && sets.TradeDirection == Short && !isBuyBar;
     if (!shouldBuy && !shouldSell) {
@@ -727,17 +727,17 @@ void DoWaitConfirmationBar()
     if (CustomSafeTicks > 0) {
         // 15LS1CC Regular Strategy
         if (shouldBuy) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, PERIOD_M1, 1), MathMin(iLow(NULL, PERIOD_M1, 2), iLow(NULL, PERIOD_M1, 3))) - (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, Period(), 1), MathMin(iLow(NULL, Period(), 2), iLow(NULL, Period(), 3))) - (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
         else if (shouldSell) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, PERIOD_M1, 1), MathMax(iHigh(NULL, PERIOD_M1, 2), iHigh(NULL, PERIOD_M1, 3))) + (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, Period(), 1), MathMax(iHigh(NULL, Period(), 2), iHigh(NULL, Period(), 3))) + (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
 
         // 15LS1CC Limit Order Strategy
         if (CustomStrategy == STRATEGY_15LS1CC_LIMIT_ORDER) {
-            double prevClose = iClose(NULL, PERIOD_M1, 1);
+            double prevClose = iClose(NULL, Period(), 1);
             double midEntry = NormalizeDouble((sets.StopLossLevel + prevClose) / 2.0, _Digits);
 
             sets.EntryType = Pending;
@@ -1056,15 +1056,15 @@ void DoSnapSL()
         double minDiff = 999999999;
         for (int i = 1; i < 180; i++) {
             // Check if current SL is above the tested bar
-            if (iLow(NULL, PERIOD_M1, i) <= sets.StopLossLevel) {
+            if (iLow(NULL, Period(), i) <= sets.StopLossLevel) {
                 continue;
             }
 
             // Check distance between current SL and tested bar low
-            double diff = MathAbs((iLow(NULL, PERIOD_M1, i) - sets.StopLossLevel) / _Point);
+            double diff = MathAbs((iLow(NULL, Period(), i) - sets.StopLossLevel) / _Point);
             if (diff < minDiff) {
                 minDiff = diff;
-                newSL = iLow(NULL, PERIOD_M1, i);
+                newSL = iLow(NULL, Period(), i);
             }
         }
 
@@ -1080,15 +1080,15 @@ void DoSnapSL()
         double minDiff = 999999999;
         for (int i = 1; i < 180; i++) {
             // Check if current SL is above the tested bar
-            if (sets.StopLossLevel <= iHigh(NULL, PERIOD_M1, i)) {
+            if (sets.StopLossLevel <= iHigh(NULL, Period(), i)) {
                 continue;
             }
 
             // Check distance between current SL and tested bar high
-            double diff = MathAbs((sets.StopLossLevel - iHigh(NULL, PERIOD_M1, i)) / _Point);
+            double diff = MathAbs((sets.StopLossLevel - iHigh(NULL, Period(), i)) / _Point);
             if (diff < minDiff) {
                 minDiff = diff;
-                newSL = iHigh(NULL, PERIOD_M1, i);
+                newSL = iHigh(NULL, Period(), i);
             }
         }
 
@@ -1145,14 +1145,14 @@ void DoHalfPipSmallerPullbackEntry()
     // Make safe SL 0.5 pip smaller
     if (sets.TradeDirection == Long)
     {
-        double smallerEntryPrice = iClose(NULL, PERIOD_M1, 1) - (_Point * 5);
+        double smallerEntryPrice = iClose(NULL, Period(), 1) - (_Point * 5);
 
         ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
         ExtDialog.OnEndEditEdtEntryLevel();
     }
     else if (sets.TradeDirection == Short)
     {
-        double smallerEntryPrice = iClose(NULL, PERIOD_M1, 1) + (_Point * 5);
+        double smallerEntryPrice = iClose(NULL, Period(), 1) + (_Point * 5);
 
         ExtDialog.m_EdtEntryLevel.Text(DoubleToString(smallerEntryPrice, _Digits));
         ExtDialog.OnEndEditEdtEntryLevel();
@@ -1227,7 +1227,7 @@ void DoFetchWebCommands()
     } else if (CharArrayToString(result, 0, 3) == "BUY") {
         sets.TradeDirection = Long;
         sets.EntryType = Instant;
-        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) - (100 * _Point), _Digits));
+        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, Period(), 1) - (100 * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
 
         // Only trade London session
@@ -1247,7 +1247,7 @@ void DoFetchWebCommands()
     } else if (CharArrayToString(result, 0, 4) == "SELL") {
         sets.TradeDirection = Short;
         sets.EntryType = Instant;
-        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, PERIOD_M1, 1) + (100 * _Point), _Digits));
+        ExtDialog.m_EdtSL.Text(DoubleToString(iLow(NULL, Period(), 1) + (100 * _Point), _Digits));
         ExtDialog.OnEndEditEdtSL();
 
         // Only trade London session
