@@ -56,7 +56,8 @@ enum ENUM_CUSTOM_STRATEGY
     CUSTOM_STRATEGY_REGULAR = 0,         // Regular
     CUSTOM_STRATEGY_LIMIT_ORDER = 1,     // Limit Order
     CUSTOM_STRATEGY_SCALING_STOP = 2,    // Scaling Stop
-    CUSTOM_STRATEGY_SCALING_REENTRY = 3  // Scaling Reentry
+    CUSTOM_STRATEGY_SCALING_REENTRY = 3, // Scaling Reentry
+    CUSTOM_STRATEGY_AGGRESSIVE = 4        // Aggressive
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = CUSTOM_STRATEGY_REGULAR; // CustomStrategy: Trading strategy
 input int CustomMinSL = 10; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
@@ -742,6 +743,18 @@ void DoWaitConfirmationBar()
 
             sets.EntryType = Pending;
             ExtDialog.m_EdtEntryLevel.Text(DoubleToString(midEntry, _Digits));
+            ExtDialog.OnEndEditEdtEntryLevel();
+            ExtDialog.RefreshValues();
+        }
+
+        // Aggressive Strategy: entry sits 11 ticks away from the safe SL.
+        if (CustomStrategy == CUSTOM_STRATEGY_AGGRESSIVE) {
+            double aggressiveEntry = shouldBuy ? sets.StopLossLevel + (11 * _Point)
+                                               : sets.StopLossLevel - (11 * _Point);
+            aggressiveEntry = NormalizeDouble(aggressiveEntry, _Digits);
+
+            sets.EntryType = Pending;
+            ExtDialog.m_EdtEntryLevel.Text(DoubleToString(aggressiveEntry, _Digits));
             ExtDialog.OnEndEditEdtEntryLevel();
             ExtDialog.RefreshValues();
         }
