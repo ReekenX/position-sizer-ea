@@ -57,7 +57,8 @@ enum ENUM_CUSTOM_STRATEGY
     CUSTOM_STRATEGY_LIMIT_ORDER = 1,      // Limit Order – safe SL and Entry is in the middle
     CUSTOM_STRATEGY_SCALING_STOP = 2,     // Scaling Stop – immediately open STOP trade at 1R
     CUSTOM_STRATEGY_SCALING_REENTRY = 3,  // Scaling Reentry – open second trade at 1R
-    CUSTOM_STRATEGY_AGGRESSIVE = 4        // Aggressive – safe SL and CustomMinSL ticks entry
+    CUSTOM_STRATEGY_AGGRESSIVE = 4,       // Aggressive – safe SL and CustomMinSL ticks entry
+    CUSTOM_STRATEGY_DISCOUNTED_TRADE = 5  // Discounted Trade – safe SL and entry CustomMinSL ticks past the close
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = CUSTOM_STRATEGY_REGULAR; // CustomStrategy: Trading strategy
 input int CustomMinSL = 11; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
@@ -747,7 +748,7 @@ void DoWaitConfirmationBar()
             ExtDialog.RefreshValues();
         }
 
-        // Aggressive Strategy: entry sits 11 ticks away from the safe SL.
+        // Aggressive Strategy: entry sits CustomMinSL ticks away from the safe SL.
         if (CustomStrategy == CUSTOM_STRATEGY_AGGRESSIVE) {
             double aggressiveEntry = shouldBuy ? sets.StopLossLevel + (CustomMinSL * _Point)
                                                : sets.StopLossLevel - (CustomMinSL * _Point);
@@ -755,6 +756,19 @@ void DoWaitConfirmationBar()
 
             sets.EntryType = Pending;
             ExtDialog.m_EdtEntryLevel.Text(DoubleToString(aggressiveEntry, _Digits));
+            ExtDialog.OnEndEditEdtEntryLevel();
+            ExtDialog.RefreshValues();
+        }
+
+        // Discounted Trade Strategy: entry is CustomMinSL ticks better than the confirmation candle close.
+        if (CustomStrategy == CUSTOM_STRATEGY_DISCOUNTED_TRADE) {
+            double confirmationClose = iClose(NULL, Period(), 1);
+            double discountedEntry = shouldBuy ? confirmationClose - (CustomMinSL * _Point)
+                                               : confirmationClose + (CustomMinSL * _Point);
+            discountedEntry = NormalizeDouble(discountedEntry, _Digits);
+
+            sets.EntryType = Pending;
+            ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedEntry, _Digits));
             ExtDialog.OnEndEditEdtEntryLevel();
             ExtDialog.RefreshValues();
         }
