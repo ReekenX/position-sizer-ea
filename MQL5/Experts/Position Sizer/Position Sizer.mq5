@@ -736,42 +736,46 @@ void DoWaitConfirmationBar()
             ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, Period(), 1), MathMax(iHigh(NULL, Period(), 2), iHigh(NULL, Period(), 3))) + (CustomSafeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
+    }
 
-        // Limit Order Strategy
-        if (CustomStrategy == CUSTOM_STRATEGY_LIMIT_ORDER) {
-            double prevClose = iClose(NULL, Period(), 1);
-            double midEntry = NormalizeDouble((sets.StopLossLevel + prevClose) / 2.0, _Digits);
+    // Entry placement stays outside the CustomSafeTicks gate: with 0 safe ticks the SL line is left
+    // as-is, but the strategy still has to move the entry - otherwise EntryType remains Instant and
+    // the order falls through to a market execution on the confirmation candle.
 
-            sets.EntryType = Pending;
-            ExtDialog.m_EdtEntryLevel.Text(DoubleToString(midEntry, _Digits));
-            ExtDialog.OnEndEditEdtEntryLevel();
-            ExtDialog.RefreshValues();
-        }
+    // Limit Order Strategy
+    if (CustomStrategy == CUSTOM_STRATEGY_LIMIT_ORDER) {
+        double prevClose = iClose(NULL, Period(), 1);
+        double midEntry = NormalizeDouble((sets.StopLossLevel + prevClose) / 2.0, _Digits);
 
-        // Aggressive Strategy: entry sits CustomMinSL ticks away from the safe SL.
-        if (CustomStrategy == CUSTOM_STRATEGY_AGGRESSIVE) {
-            double aggressiveEntry = shouldBuy ? sets.StopLossLevel + (CustomMinSL * _Point)
-                                               : sets.StopLossLevel - (CustomMinSL * _Point);
-            aggressiveEntry = NormalizeDouble(aggressiveEntry, _Digits);
+        sets.EntryType = Pending;
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(midEntry, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
+        ExtDialog.RefreshValues();
+    }
 
-            sets.EntryType = Pending;
-            ExtDialog.m_EdtEntryLevel.Text(DoubleToString(aggressiveEntry, _Digits));
-            ExtDialog.OnEndEditEdtEntryLevel();
-            ExtDialog.RefreshValues();
-        }
+    // Aggressive Strategy: entry sits CustomMinSL ticks away from the safe SL.
+    if (CustomStrategy == CUSTOM_STRATEGY_AGGRESSIVE) {
+        double aggressiveEntry = shouldBuy ? sets.StopLossLevel + (CustomMinSL * _Point)
+                                           : sets.StopLossLevel - (CustomMinSL * _Point);
+        aggressiveEntry = NormalizeDouble(aggressiveEntry, _Digits);
 
-        // Discounted Trade Strategy: entry is CustomMinSL ticks better than the confirmation candle close.
-        if (CustomStrategy == CUSTOM_STRATEGY_DISCOUNTED_TRADE) {
-            double confirmationClose = iClose(NULL, Period(), 1);
-            double discountedEntry = shouldBuy ? confirmationClose - (CustomMinSL * _Point)
-                                               : confirmationClose + (CustomMinSL * _Point);
-            discountedEntry = NormalizeDouble(discountedEntry, _Digits);
+        sets.EntryType = Pending;
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(aggressiveEntry, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
+        ExtDialog.RefreshValues();
+    }
 
-            sets.EntryType = Pending;
-            ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedEntry, _Digits));
-            ExtDialog.OnEndEditEdtEntryLevel();
-            ExtDialog.RefreshValues();
-        }
+    // Discounted Trade Strategy: entry is CustomMinSL ticks better than the confirmation candle close.
+    if (CustomStrategy == CUSTOM_STRATEGY_DISCOUNTED_TRADE) {
+        double confirmationClose = iClose(NULL, Period(), 1);
+        double discountedEntry = shouldBuy ? confirmationClose - (CustomMinSL * _Point)
+                                           : confirmationClose + (CustomMinSL * _Point);
+        discountedEntry = NormalizeDouble(discountedEntry, _Digits);
+
+        sets.EntryType = Pending;
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedEntry, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
+        ExtDialog.RefreshValues();
     }
 
     // This type of trading must be always on 1R
