@@ -782,11 +782,26 @@ void DoWaitConfirmationBar()
       ExtDialog.ProcessTPChange(false);
     }
 
+    // Pending strategies must enter at a discount. Trade() derives the order type from the price
+    // side alone, so an entry that price already passed becomes a STOP order that fills instantly
+    // (happens when CustomMinSL exceeds CustomSafeTicks plus the close-to-extreme distance).
+    if (sets.EntryType == Pending) {
+        double currentAsk = SymbolInfoDouble(SymbolForTrading, SYMBOL_ASK);
+        double currentBid = SymbolInfoDouble(SymbolForTrading, SYMBOL_BID);
+        if ((shouldBuy && sets.EntryLevel >= currentAsk) || (shouldSell && sets.EntryLevel <= currentBid)) {
+            Print("Skipping trade: pending entry ", sets.EntryLevel, " is on the wrong side of the market (Ask ", currentAsk, ", Bid ", currentBid, ") and would fill immediately as a stop order");
+            CustomTradeSignal = "NONE";
+            ExtDialog.m_BtnOrderOnNextBar.Text(" ");
+            return;
+        }
+    }
+
     // Skip trade if SL distance from entry is outside the allowed range
     double slDistanceTicks = MathAbs(sets.EntryLevel - sets.StopLossLevel) / _Point;
     if (slDistanceTicks < CustomMinSL || slDistanceTicks > CustomMaxSL) {
         Print("Skipping trade: SL distance ", slDistanceTicks, " ticks is outside allowed range [", CustomMinSL, ", ", CustomMaxSL, "]");
         CustomTradeSignal = "NONE";
+        ExtDialog.m_BtnOrderOnNextBar.Text(" ");
         return;
     }
 
