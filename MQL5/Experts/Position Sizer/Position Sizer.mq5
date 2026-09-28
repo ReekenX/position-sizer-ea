@@ -1085,7 +1085,7 @@ void DoSnapSL()
     if (sets.TradeDirection == Long) {
         double newSL = -1;
         double minDiff = 999999999;
-        for (int i = 1; i < 180; i++) {
+        for (int i = 1; i < 50; i++) {
             // Check if current SL is above the tested bar
             if (iLow(NULL, Period(), i) <= sets.StopLossLevel) {
                 continue;
@@ -1109,7 +1109,7 @@ void DoSnapSL()
     if (sets.TradeDirection == Short) {
         double newSL = -1;
         double minDiff = 999999999;
-        for (int i = 1; i < 180; i++) {
+        for (int i = 1; i < 50; i++) {
             // Check if current SL is above the tested bar
             if (sets.StopLossLevel <= iHigh(NULL, Period(), i)) {
                 continue;
