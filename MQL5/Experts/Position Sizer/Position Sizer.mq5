@@ -1209,6 +1209,19 @@ void DoPlaceLimitOrderOnHalf()
 
     ExtDialog.m_EdtEntryLevel.Text(DoubleToString(halfEntryPrice, _Digits));
     ExtDialog.OnEndEditEdtEntryLevel();
+
+    // Push the current SL further away by extra ticks
+    if (CustomSafeTicks > 0) {
+        if (sets.TradeDirection == Long) {
+            ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel - (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.OnEndEditEdtSL();
+        }
+        else if (sets.TradeDirection == Short) {
+            ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel + (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.OnEndEditEdtSL();
+        }
+    }
+
     ExtDialog.RefreshValues();
 
     Trade();
