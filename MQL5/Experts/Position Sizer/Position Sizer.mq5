@@ -1131,6 +1131,26 @@ void DoSnapSL()
     }
 }
 
+void DoSnapEntry()
+{
+    double newEntry = -1;
+    double minDiff = 999999999;
+    for (int i = 1; i <= 50; i++) {
+        // Check distance between current Entry and tested bar close
+        double diff = MathAbs((iClose(NULL, Period(), i) - sets.EntryLevel) / _Point);
+        if (diff < minDiff) {
+            minDiff = diff;
+            newEntry = iClose(NULL, Period(), i);
+        }
+    }
+
+    // Update Entry to the closest close
+    if (newEntry > 0) {
+        ExtDialog.m_EdtEntryLevel.Text(DoubleToString(newEntry, _Digits));
+        ExtDialog.OnEndEditEdtEntryLevel();
+    }
+}
+
 void Do80PercentPullbackEntry()
 {
     sets.EntryType = Instant;
@@ -1736,6 +1756,7 @@ void OnChartEvent(const int id,
                     ExtDialog.OnClickBtnOrderType(); // Includes RefreshValues().
                 }
                 else ExtDialog.RefreshValues();
+                DoSnapEntry();
             }
         }
         // Minimize/maximize:
