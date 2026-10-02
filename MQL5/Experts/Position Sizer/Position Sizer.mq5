@@ -825,7 +825,7 @@ void DoWaitConfirmationBar()
         return;
     }
 
-    Trade();
+    DoTrade();
 
     // Scaling Strategy
     if (CustomStrategy == CUSTOM_STRATEGY_SCALING_STOP) {
@@ -873,7 +873,7 @@ void DoWaitDiscountAndTrade()
             sets.EntryType = Instant;
             ExtDialog.RefreshValues();
 
-            Trade();
+            DoTrade();
 
             CustomTradeSignal = "PENDING_BUY_SCALE";
             ExtDialog.m_BtnOrderOnNextBar.Text("X");
@@ -894,7 +894,7 @@ void DoWaitDiscountAndTrade()
             sets.EntryType = Instant;
             ExtDialog.RefreshValues();
 
-            Trade();
+            DoTrade();
 
             CustomTradeSignal = "PENDING_SELL_SCALE";
             ExtDialog.m_BtnOrderOnNextBar.Text("X");
@@ -1277,7 +1277,7 @@ void DoPlaceDiscountedLimitOrder()
 
     ExtDialog.RefreshValues();
 
-    Trade();
+    DoTrade();
 
     if (sets.TradeDirection == Long) {
         Print("Placed BUY LIMIT at ", discountedEntryPrice, " (entry discounted by ", discountTicks, " ticks)");
@@ -1462,8 +1462,8 @@ void DoPlaceReentryLimits()
     ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
     ExtDialog.ProcessTPChange(false);
-    Trade();
-    Trade();
+    DoTrade();
+    DoTrade();
 
     // Pending orders are cancelled if price reaches limit 2's SL, so both limits can still fill.
     CustomCancelAtPrice = secondLimitSL;
@@ -1504,7 +1504,7 @@ void DoScaling()
 
     ExtDialog.RefreshValues();
 
-    Trade();
+    DoTrade();
 
     if (sets.TradeDirection == Long) {
         Print("Placed BUY scaled position");
