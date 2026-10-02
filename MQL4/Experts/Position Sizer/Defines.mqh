@@ -1,13 +1,30 @@
 //+------------------------------------------------------------------+
 //|                                                      Defines.mqh |
-//|                                  Copyright © 2025, EarnForex.com |
+//|                                  Copyright © 2026, EarnForex.com |
 //|                                       https://www.earnforex.com/ |
 //+------------------------------------------------------------------+
 #include <Controls\Button.mqh>
 #include <Controls\Dialog.mqh>
 #include <Controls\CheckBox.mqh>
 #include <Controls\Label.mqh>
+#include "HorizontalRadioGroup.mqh"
 #include <Arrays\List.mqh>
+
+// Additional checkbox bitmaps:
+#resource "Images\\CheckBoxOnDark.bmp"
+#resource "Images\\CheckBoxOffDark.bmp"
+#resource "Images\\CheckBoxOnDark17.bmp"
+#resource "Images\\CheckBoxOffDark17.bmp"
+#resource "Images\\CheckBoxOn17.bmp"
+#resource "Images\\CheckBoxOff17.bmp"
+
+// Additional radiogroup button bitmaps:
+#resource "Images\\RadioButtonOnDark.bmp"
+#resource "Images\\RadioButtonOffDark.bmp"
+#resource "Images\\RadioButtonOn16Dark.bmp"
+#resource "Images\\RadioButtonOff16Dark.bmp"
+#resource "Images\\RadioButtonOn16.bmp"
+#resource "Images\\RadioButtonOff16.bmp"
 
 color CONTROLS_EDIT_COLOR_ENABLE  = C'255,255,255';
 color CONTROLS_EDIT_COLOR_DISABLE = C'221,221,211';
@@ -16,18 +33,45 @@ color CONTROLS_BUTTON_COLOR_ENABLE  = C'200,200,200';
 color CONTROLS_BUTTON_COLOR_DISABLE = C'224,224,224';
 
 color DARKMODE_BG_DARK_COLOR = 0x444444;
-color DARKMODE_CONTROL_BRODER_COLOR = 0x888888;
+color DARKMODE_CONTROL_BORDER_COLOR = 0x888888;
 color DARKMODE_MAIN_AREA_BORDER_COLOR = 0x333333;
 color DARKMODE_MAIN_AREA_BG_COLOR = 0x666666;
 color DARKMODE_EDIT_BG_COLOR = 0xAAAAAA;
 color DARKMODE_BUTTON_BG_COLOR = 0xA19999;
-color DARKMODE_TEXT_COLOR = 0x000000;;
-
-color CONTROLS_BUTTON_COLOR_TP_UNLOCKED, CONTROLS_BUTTON_COLOR_TP_LOCKED;
+color DARKMODE_TEXT_COLOR = 0x000000;
+color SA_BUTTON_ON_COLOR = C'124,196,127'; // Spread Adjustment button in its pressed (on) state.
+color SA_BUTTON_ON_BORDER_COLOR = C'76,175,80';
+color DARKMODE_SA_BUTTON_ON_COLOR = C'94,158,100';
+color DARKMODE_SA_BUTTON_ON_BORDER_COLOR = C'76,132,82';
+color SA_ADJUSTED_TEXT_COLOR = clrGreen; // Text color of the spread-adjusted value fields.
 
 #define MULTIPLIER_VALUE_CONTROL 10
 #define MULTIPLIER_VALUE_SHIFT 100
 #define MULTIPLIER_VALUE_CONTROL_SHIFT 1000
+
+// Hotkeys. Each configurable hotkey is parsed once (in OnInit) into a HotkeyDef and later matched in OnChartEvent().
+enum HOTKEY_ID
+{
+    HK_Trade,
+    HK_SwitchOrderType,
+    HK_SwitchEntryDirection,
+    HK_SwitchHideShowLines,
+    HK_SetStopLoss,
+    HK_SetTakeProfit,
+    HK_SetEntry,
+    HK_MinimizeMaximize,
+    HK_SwitchSLPointsLevel,
+    HK_SwitchTPPointsLevel,
+    HK_COUNT // Number of hotkeys - keep last.
+};
+
+struct HotkeyDef
+{
+    uchar main_key;      // 0 = disabled.
+    bool  ctrl_required;
+    bool  shift_required;
+    HotkeyDef() { main_key = 0; ctrl_required = false; shift_required = false; }
+};
 
 enum ENTRY_TYPE
 {
@@ -138,12 +182,20 @@ enum INCLUDE_DIRECTIONS
     INCLUDE_DIRECTIONS_SELL, // Sell only
 };
 
+enum MARGIN_UTILIZATION_BASE
+{
+    MUB_BALANCE, // Balance
+    MUB_STARTING_BALANCE, // Starting balance
+    MUB_FREE_MARGIN // Free margin
+};
+
 struct Settings
 {
     ENTRY_TYPE       EntryType;
     double           EntryLevel;
     double           StopLossLevel;
     double           TakeProfitLevel;
+    double           TPMultiplier;
     int              TakeProfitsNumber;
     double           Risk;
     double           MoneyRisk;
@@ -174,6 +226,7 @@ struct Settings
     int              MaxEntrySLDistance;
     int              MinEntrySLDistance;
     double           MaxRiskPercentage;
+    double           MaxMarginPerc;
     // For SL/TP distance modes:
     bool             SLDistanceInPoints;
     bool             TPDistanceInPoints;
@@ -196,6 +249,8 @@ struct Settings
     double           MaxPositionSizePerSymbol;
     double           MaxRiskTotal;
     double           MaxRiskPerSymbol;
+    double           MaxMarginPercTotal;
+    double           MaxMarginPercPerSymbol;
     int              ExpiryMinutes;
     // For ATR:
     int              ATRPeriod;
@@ -215,6 +270,8 @@ struct Settings
     VOLUME_SHARE_MODE ShareVolumeMode;
     bool             TemplateChanged;
     ADDITIONAL_TP_SCHEME LastAdditionalTPScheme;
+    MARGIN_UTILIZATION_BASE MarginUtilizationBase;
+    double MUBStartingBalance;
 } sets;
 
 // An object class for a list of panel objects with their names for fields located on a given tab of the panel. There will be one list per tab.

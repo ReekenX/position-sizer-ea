@@ -1,31 +1,32 @@
 //+------------------------------------------------------------------+
 //|                                               Position Sizer.mq4 |
-//|                                  Copyright © 2025, EarnForex.com |
+//|                                  Copyright © 2026, EarnForex.com |
 //|                                       https://www.earnforex.com/ |
 //+------------------------------------------------------------------+
 #property copyright "EarnForex.com"
 #property link      "https://www.earnforex.com/metatrader-expert-advisors/Position-Sizer/"
+#define VERSION     "3.16"
 #property icon      "EF-Icon-64x64px.ico"
-#property version   "3.11"
-string    Version = "3.11";
+#property version VERSION
 #property strict
 
 #include "Translations\English.mqh"
 //#include "Translations\Arabic.mqh"
 //#include "Translations\Chinese.mqh"
 //#include "Translations\ChineseTraditional.mqh" // Contributed by fxchess.
+//#include "Translations\Japanese.mqh" // Contributed by Satoru Hoshino.
 //#include "Translations\Portuguese.mqh" // Contributed by Matheus Sevaroli.
 //#include "Translations\Russian.mqh"
 //#include "Translations\Spanish.mqh"
 //#include "Translations\Ukrainian.mqh"
 
-#property description "Calculates risk-based position size for your account."
-#property description "Allows trade execution based the calculation results.\r\n"
-#property description "WARNING: No warranty. This EA is offered \"as is\". Use at your own risk.\r\n"
-#property description "Note: Pressing the \"T\" key will open a trade."
+#property description DESCRIPTION_LINE_1
+#property description DESCRIPTION_LINE_2
+#property description DESCRIPTION_LINE_3
+#property description DESCRIPTION_LINE_4
 
-#include "Position Sizer.mqh";
-#include "Position Sizer Trading.mqh";
+#include "Position Sizer.mqh"
+#include "Position Sizer Trading.mqh"
 #include "TesterSupport.mqh"
 
 input group "Compactness"
@@ -36,6 +37,7 @@ input bool ShowAdditionalTPLabel = false; // ShowAdditionalTPLabel: Show TP $/% 
 input bool ShowAdditionalEntryLabel = false; // ShowAdditionalEntryLabel: Show Position Size label?
 input bool DrawTextAsBackground = false; // DrawTextAsBackground: Draw label objects as background?
 input bool HideAccSize = false; // HideAccSize: Hide account size?
+input bool HideMoneyAndPointsValues = false; // HideMoneyAndPointsValues: Hide money and points values?
 input bool ShowPointValue = false; // ShowPointValue: Show point value?
 input bool ShowMaxPSButton = false; // ShowMaxPSButton: Show Max Position Size button?
 input bool StartPanelMinimized = false; // StartPanelMinimized: Start the panel minimized?
@@ -44,6 +46,7 @@ input bool ShowMaxParametersOnTrading = true; // Show max parameters on Trading 
 input bool ShowFusesOnTrading = true; // Show trading "fuses" on Trading tab?
 input bool ShowCheckboxesOnTrading = true; // Show checkboxes on Trading tab?
 input bool HideEntryLineOnInstant = false; // Hide Entry line for Instant orders?
+input bool ShowAdditionalMarginSettings = false; // Show additional margin settings/info?
 input ADDITIONAL_TRADE_BUTTONS AdditionalTradeButtons = ADDITIONAL_TRADE_BUTTONS_NONE; // Additional Trade buttons:
 input group "Fonts"
 input string ____Fonts = "";
@@ -79,8 +82,8 @@ input int DefaultATRPeriod = 14; // ATRPeriod: Default ATR period.
 input double DefaultATRMultiplierSL = 0; // ATRMultiplierSL: Default ATR multiplier for SL.
 input double DefaultATRMultiplierTP = 0; // ATRMultiplierTP: Default ATR multiplier for TP.
 input ENUM_TIMEFRAMES DefaultATRTimeframe = PERIOD_CURRENT; // ATRTimeframe: Default timeframe for ATR.
-input bool DefaultSpreadAdjustmentSL = false; // SpreadAdjustmentSL: Adjust SL by Spread value in ATR mode.
-input bool DefaultSpreadAdjustmentTP = false; // SpreadAdjustmentTP: Adjust TP by Spread value in ATR mode.
+input bool DefaultSpreadAdjustmentSL = false; // SpreadAdjustmentSL: Adjust SL by Spread value.
+input bool DefaultSpreadAdjustmentTP = false; // SpreadAdjustmentTP: Adjust TP by Spread value.
 input double DefaultCommission = 0; // Commission: Default one-way commission per 1 lot.
 input COMMISSION_TYPE DefaultCommissionType = COMMISSION_CURRENCY; // CommissionType: Default commission type.
 input ACCOUNT_BUTTON DefaultAccountButton = Balance; // AccountButton: Balance/Equity/Balance-CPR
@@ -96,12 +99,14 @@ input double DefaultCustomLeverage = 0; // CustomLeverage: Default custom levera
 input int DefaultMagicNumber = 2022052714; // MagicNumber: Default magic number for Trading tab.
 input string DefaultCommentary = ""; // Commentary: Default order comment for Trading tab.
 input bool DefaultCommentAutoSuffix = false; // AutoSuffix: Automatic suffix for order comment in Trading tab.
+input bool DefaultCommentBalance = false; // CommentBalance: Add current balance in front of order comment?
 input bool DefaultDisableTradingWhenLinesAreHidden = false; // DisableTradingWhenLinesAreHidden: for Trading tab.
 input int DefaultMaxSlippage = 0; // MaxSlippage: Maximum slippage for Trading tab.
 input int DefaultMaxSpread = 0; // MaxSpread: Maximum spread for Trading tab.
 input int DefaultMaxEntrySLDistance = 0; // MaxEntrySLDistance: Maximum entry/SL distance for Trading tab.
 input int DefaultMinEntrySLDistance = 0; // MinEntrySLDistance: Minimum entry/SL distance for Trading tab.
 input double DefaultMaxRiskPercentage = 0; // MaxRiskPercentage: Maximum risk % for Trading tab.
+input double DefaultMaxMarginPerc = 0; // MaxMarginPerc: Maximum margin % for Trading tab.
 input double DefaultMaxPositionSizeTotal = 0; // Maximum position size total for Trading tab.
 input double DefaultMaxPositionSizePerSymbol = 0; // Maximum position size per symbol for Trading tab.
 input bool DefaultSubtractOPV = false; // SubtractOPV: Subtract open positions volume (Trading tab).
@@ -120,8 +125,12 @@ input int DefaultMaxNumberOfTradesTotal = 0; // MaxNumberOfTradesTotal: For the 
 input int DefaultMaxNumberOfTradesPerSymbol = 0; // MaxNumberOfTradesPerSymbol: For the Trading tab. 0 - no limit.
 input double DefaultMaxRiskTotal = 0; // MaxRiskTotal: For the Trading tab. 0 - no limit.
 input double DefaultMaxRiskPerSymbol = 0; // MaxRiskPerSymbol: For the Trading tab. 0 - no limit.
+input double DefaultMaxMarginPercTotal = 0; // MaxMarginPercTotal: For the Trading tab. 0 - no limit.
+input double DefaultMaxMarginPercPerSymbol = 0; // MaxMarginPercPerSymbol: For the Trading tab. 0 - no limit.
 input bool DefaultSLDistanceInPoints = false; // SLDistanceInPoints: SL distance in points instead of a level.
 input bool DefaultTPDistanceInPoints = false; // TPDistanceInPoints: TP distance in points instead of a level.
+input MARGIN_UTILIZATION_BASE DefaultMarginUtilizationBase = MUB_BALANCE; // Margin utilization base.
+input double DefaultMUBStartingBalance = 0; // Starting balance for margin utilization base.
 input group "Keyboard shortcuts"
 input string ____Keyboard_Shortcuts = "Case-insensitive hotkey. Supports Ctrl, Shift.";
 input string TradeHotKey = "T"; // TradeHotKey: Execute a trade.
@@ -136,7 +145,7 @@ input string SwitchSLPointsLevelHotKey = "Shift+S"; // SwitchSLPointsLevelHotKey
 input string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
 input group "Miscellaneous"
 input string ____Miscellaneous = "";
-input double TP_Multiplier = 1; // TP Multiplier for SL value, appears in Take-profit button.
+input double TP_Multiplier = 1; // TP Multiplier for SL value (for take-profit button).
 input bool UseCommissionToSetTPDistance = false; // UseCommissionToSetTPDistance: For TP button.
 input SHOW_SPREAD ShowSpread = No; // ShowSpread: Show current spread in points or as an SL ratio.
 input double AdditionalFunds = 0; // AdditionalFunds: Added to account balance for risk calculation.
@@ -161,7 +170,8 @@ input bool LessRestrictiveMaxLimits = false; // Allow smaller trades when tradin
 input color LongButtonColor = CONTROLS_BUTTON_COLOR_BG; // Long Button Color
 input color ShortButtonColor = CONTROLS_BUTTON_COLOR_BG; // Short Button Color
 input color TradeButtonColor = CONTROLS_BUTTON_COLOR_BG; // Trade Button Color
-input bool DoNotDeleteLinesLabels = false; // Do Not Delete Lines/Labels on on deinitialization?
+input bool DoNotDeleteLinesLabels = false; // Do Not Delete Lines/Labels on deinitialization?
+input bool ConvertToPendingIfMaxMinEntrySLFails = false; // Convert instant to pending if Max/Min Entry/SL distance fails?
 
 CPositionSizeCalculator* ExtDialog;
 
@@ -170,9 +180,6 @@ bool Dont_Move_the_Panel_to_Default_Corner_X_Y;
 uint LastRecalculationTime = 0;
 bool StopLossLineIsBeingMoved = false;
 bool TakeProfitLineIsBeingMoved[]; // Separate for each TP.
-uchar MainKey_TradeHotKey = 0, MainKey_SwitchOrderTypeHotKey = 0, MainKey_SwitchEntryDirectionHotKey = 0, MainKey_SwitchHideShowLinesHotKey = 0, MainKey_SetStopLossHotKey = 0, MainKey_SetTakeProfitHotKey = 0, MainKey_SetEntryHotKey = 0, MainKey_MinimizeMaximizeHotkey = 0, MainKey_SwitchSLPointsLevelHotKey = 0, MainKey_SwitchTPPointsLevelHotKey = 0;
-bool CtrlRequired_TradeHotKey = false, CtrlRequired_SwitchOrderTypeHotKey = false, CtrlRequired_SwitchEntryDirectionHotKey = false, CtrlRequired_SwitchHideShowLinesHotKey = false, CtrlRequired_SetStopLossHotKey = false, CtrlRequired_SetTakeProfitHotKey = false, CtrlRequired_SetEntryHotKey = false, CtrlRequired_MinimizeMaximizeHotkey = false, CtrlRequired_SwitchSLPointsLevelHotKey = false, CtrlRequired_SwitchTPPointsLevelHotKey = false;
-bool ShiftRequired_TradeHotKey = false, ShiftRequired_SwitchOrderTypeHotKey = false, ShiftRequired_SwitchEntryDirectionHotKey = false, ShiftRequired_SwitchHideShowLinesHotKey = false, ShiftRequired_SetStopLossHotKey = false, ShiftRequired_SetTakeProfitHotKey = false, ShiftRequired_SetEntryHotKey = false, ShiftRequired_MinimizeMaximizeHotkey = false, ShiftRequired_SwitchSLPointsLevelHotKey = false, ShiftRequired_SwitchTPPointsLevelHotKey = false;
 bool NeedToCheckToggleScaleOffOn;
 int PrevChartWidth = -1;
 int DeinitializationReason = -1;
@@ -180,6 +187,7 @@ string OldSymbol = "";
 int OldTakeProfitsNumber = -1;
 int Mouse_Last_X = 0, Mouse_Last_Y = 0; // For SL/TP hotkeys.
 color LongButtonColorAdjusted, ShortButtonColorAdjusted, TradeButtonColorAdjusted; // Based on the DarkMode setting.
+HotkeyDef Hotkeys[HK_COUNT];
 
 int OnInit()
 {
@@ -189,8 +197,6 @@ int OnInit()
         CONTROLS_EDIT_COLOR_DISABLE = 0x999999;
         CONTROLS_BUTTON_COLOR_ENABLE  = DARKMODE_BUTTON_BG_COLOR;
         CONTROLS_BUTTON_COLOR_DISABLE = 0x919999;
-        CONTROLS_BUTTON_COLOR_TP_UNLOCKED = DARKMODE_BUTTON_BG_COLOR;
-        CONTROLS_BUTTON_COLOR_TP_LOCKED = 0x909090;
     }
     else
     {
@@ -198,8 +204,6 @@ int OnInit()
         CONTROLS_EDIT_COLOR_DISABLE = C'221,221,211';
         CONTROLS_BUTTON_COLOR_ENABLE  = C'200,200,200';
         CONTROLS_BUTTON_COLOR_DISABLE = C'224,224,224';
-        CONTROLS_BUTTON_COLOR_TP_UNLOCKED = CONTROLS_BUTTON_COLOR_BG;
-        CONTROLS_BUTTON_COLOR_TP_LOCKED = CONTROLS_BUTTON_COLOR_ENABLE;
     }
     if (LongButtonColor == CONTROLS_BUTTON_COLOR_BG) // Default color is used.
     {
@@ -233,9 +237,7 @@ int OnInit()
 
     if (DeinitializationReason != REASON_CHARTCHANGE) ExtDialog = new CPositionSizeCalculator; // Create the panel only if it is not a symbol/timeframe change.
     else OldTakeProfitsNumber = sets.TakeProfitsNumber; // Will be used to resize the panel if needed when switching symbols in some modes.
-    
-    PrevChartWidth = 0;
-    
+
     MathSrand(GetTickCount() + 293029); // Used by CreateInstanceId() in Dialog.mqh (standard library). Keep the second number unique across other panel indicators/EAs.
 
     if (SettingsFile != "") // Load a custom settings file if given via input parameters.
@@ -245,7 +247,7 @@ int OnInit()
 
     Dont_Move_the_Panel_to_Default_Corner_X_Y = true;
 
-    PanelCaptionBase = "Position Sizer (ver. " + Version + ")";
+    PanelCaptionBase = "Position Sizer (ver. " + VERSION + ")";
 
     // Symbol changed.
     if ((DeinitializationReason == REASON_CHARTCHANGE) && (OldSymbol != _Symbol))
@@ -275,7 +277,7 @@ int OnInit()
         }
     }
     bool is_InitControlsValues_required = false;
-    // Normal attempt to load settings fails (attempted in not chart change case and in chart case with 'each pair own settings' case
+    // Normal attempt to load settings fails (attempted in not chart change case and in chart change case with 'each pair own settings' case
     if ((((DeinitializationReason != REASON_CHARTCHANGE) || ((DeinitializationReason == REASON_CHARTCHANGE) && (OldSymbol != _Symbol) && (SymbolChange == SYMBOL_CHART_CHANGE_EACH_OWN))) && (!ExtDialog.LoadSettingsFromDisk())) 
     // OR chart change with hard_reset configured and with symbol change.
       || ((DeinitializationReason == REASON_CHARTCHANGE) && (SymbolChange == SYMBOL_CHART_CHANGE_HARD_RESET) && (OldSymbol != _Symbol)))
@@ -284,6 +286,7 @@ int OnInit()
         sets.EntryLevel = EntryLevel;
         sets.StopLossLevel = StopLossLevel;
         sets.TakeProfitLevel = TakeProfitLevel; // Optional
+        sets.TPMultiplier = TP_Multiplier;
         sets.TakeProfitsNumber = DefaultTakeProfitsNumber;
         if (sets.TakeProfitsNumber < 1) sets.TakeProfitsNumber = 1; // At least one TP.
         ArrayResize(sets.TP, sets.TakeProfitsNumber);
@@ -340,6 +343,7 @@ int OnInit()
         sets.MaxPositionSizeTotal = DefaultMaxPositionSizeTotal;
         sets.MaxPositionSizePerSymbol = DefaultMaxPositionSizePerSymbol;
         sets.MaxRiskPercentage = DefaultMaxRiskPercentage;
+        sets.MaxMarginPerc = DefaultMaxMarginPerc;
         if ((sets.MaxPositionSizeTotal < sets.MaxPositionSizePerSymbol) && (sets.MaxPositionSizeTotal != 0)) sets.MaxPositionSizeTotal = sets.MaxPositionSizePerSymbol;
         sets.StopLoss = 0;
         sets.TakeProfit = 0;
@@ -363,10 +367,15 @@ int OnInit()
         sets.MaxRiskTotal = DefaultMaxRiskTotal;
         sets.MaxRiskPerSymbol = DefaultMaxRiskPerSymbol;
         if ((sets.MaxRiskTotal < sets.MaxRiskPerSymbol) && (sets.MaxRiskTotal != 0)) sets.MaxRiskTotal = sets.MaxRiskPerSymbol;
+        sets.MaxMarginPercTotal = DefaultMaxMarginPercTotal;
+        sets.MaxMarginPercPerSymbol = DefaultMaxMarginPercPerSymbol;
+        if ((sets.MaxMarginPercTotal < sets.MaxMarginPercPerSymbol) && (sets.MaxMarginPercTotal != 0)) sets.MaxMarginPercTotal = sets.MaxMarginPercPerSymbol;
         sets.ShareVolumeMode = Decreasing;
         sets.TemplateChanged = false;
         sets.SLDistanceInPoints = DefaultSLDistanceInPoints;
         sets.TPDistanceInPoints = DefaultTPDistanceInPoints;
+        sets.MarginUtilizationBase = DefaultMarginUtilizationBase;
+        sets.MUBStartingBalance = DefaultMUBStartingBalance;
         if (DeinitializationReason == REASON_CHARTCHANGE) is_InitControlsValues_required = true;
         sets.LastAdditionalTPScheme = ADDITIONAL_TP_SCHEME_OUTWARD;
     }
@@ -382,7 +391,7 @@ int OnInit()
     }
     if (DeinitializationReason != REASON_CHARTCHANGE)
     {
-        if (!ExtDialog.Create(0, "Position Sizer (ver. " + Version + ")", 0, DefaultPanelPositionX, DefaultPanelPositionY)) return INIT_FAILED;
+        if (!ExtDialog.Create(0, "Position Sizer (ver. " + VERSION + ")", 0, DefaultPanelPositionX, DefaultPanelPositionY)) return INIT_FAILED;
         ExtDialog.Run();
 
         // No ini file - move the panel according to the inputs.
@@ -393,26 +402,16 @@ int OnInit()
         ExtDialog.IniFileLoad();
 
         // If a hotkey is given, break up the string to check for hotkey presses in OnChartEvent().
-        if (TradeHotKey != "") DissectHotKeyCombination(TradeHotKey, ShiftRequired_TradeHotKey, CtrlRequired_TradeHotKey, MainKey_TradeHotKey);
-        else MainKey_TradeHotKey = 0;
-        if (SwitchEntryDirectionHotKey != "") DissectHotKeyCombination(SwitchEntryDirectionHotKey, ShiftRequired_SwitchEntryDirectionHotKey, CtrlRequired_SwitchEntryDirectionHotKey, MainKey_SwitchEntryDirectionHotKey);
-        else MainKey_SwitchEntryDirectionHotKey = 0;
-        if (SwitchOrderTypeHotKey != "") DissectHotKeyCombination(SwitchOrderTypeHotKey, ShiftRequired_SwitchOrderTypeHotKey, CtrlRequired_SwitchOrderTypeHotKey, MainKey_SwitchOrderTypeHotKey);
-        else MainKey_SwitchOrderTypeHotKey = 0;
-        if (SwitchHideShowLinesHotKey != "") DissectHotKeyCombination(SwitchHideShowLinesHotKey, ShiftRequired_SwitchHideShowLinesHotKey, CtrlRequired_SwitchHideShowLinesHotKey, MainKey_SwitchHideShowLinesHotKey);
-        else MainKey_SwitchHideShowLinesHotKey = 0;
-        if (SetStopLossHotKey != "") DissectHotKeyCombination(SetStopLossHotKey, ShiftRequired_SetStopLossHotKey, CtrlRequired_SetStopLossHotKey, MainKey_SetStopLossHotKey);
-        else MainKey_SetStopLossHotKey = 0;
-        if (SetTakeProfitHotKey != "") DissectHotKeyCombination(SetTakeProfitHotKey, ShiftRequired_SetTakeProfitHotKey, CtrlRequired_SetTakeProfitHotKey, MainKey_SetTakeProfitHotKey);
-        else MainKey_SetTakeProfitHotKey = 0;
-        if (SetEntryHotKey != "") DissectHotKeyCombination(SetEntryHotKey, ShiftRequired_SetEntryHotKey, CtrlRequired_SetEntryHotKey, MainKey_SetEntryHotKey);
-        else MainKey_SetEntryHotKey = 0;
-        if (SwitchSLPointsLevelHotKey != "") DissectHotKeyCombination(SwitchSLPointsLevelHotKey, ShiftRequired_SwitchSLPointsLevelHotKey, CtrlRequired_SwitchSLPointsLevelHotKey, MainKey_SwitchSLPointsLevelHotKey);
-        else MainKey_SwitchSLPointsLevelHotKey = 0;
-        if (SwitchTPPointsLevelHotKey != "") DissectHotKeyCombination(SwitchTPPointsLevelHotKey, ShiftRequired_SwitchTPPointsLevelHotKey, CtrlRequired_SwitchTPPointsLevelHotKey, MainKey_SwitchTPPointsLevelHotKey);
-        else MainKey_SwitchTPPointsLevelHotKey = 0;
-        if (MinimizeMaximizeHotkey != "") DissectHotKeyCombination(MinimizeMaximizeHotkey, ShiftRequired_MinimizeMaximizeHotkey, CtrlRequired_MinimizeMaximizeHotkey, MainKey_MinimizeMaximizeHotkey);
-        else MainKey_MinimizeMaximizeHotkey = 0;
+        SetupHotkey(TradeHotKey,                Hotkeys[HK_Trade]);
+        SetupHotkey(SwitchEntryDirectionHotKey, Hotkeys[HK_SwitchEntryDirection]);
+        SetupHotkey(SwitchOrderTypeHotKey,      Hotkeys[HK_SwitchOrderType]);
+        SetupHotkey(SwitchHideShowLinesHotKey,  Hotkeys[HK_SwitchHideShowLines]);
+        SetupHotkey(SetStopLossHotKey,          Hotkeys[HK_SetStopLoss]);
+        SetupHotkey(SetTakeProfitHotKey,        Hotkeys[HK_SetTakeProfit]);
+        SetupHotkey(SetEntryHotKey,             Hotkeys[HK_SetEntry]);
+        SetupHotkey(SwitchSLPointsLevelHotKey,  Hotkeys[HK_SwitchSLPointsLevel]);
+        SetupHotkey(SwitchTPPointsLevelHotKey,  Hotkeys[HK_SwitchTPPointsLevel]);
+        SetupHotkey(MinimizeMaximizeHotkey,     Hotkeys[HK_MinimizeMaximize]);
     }
     else if (OldSymbol != _Symbol)
     {
@@ -455,7 +454,7 @@ int OnInit()
                 {
                     ExtDialog.OnClickBtnTakeProfitsNumberAdd();
                 }
-                // Theese three should be executed only after all TP arrays are properly resized.
+                // These should be executed only after all TP arrays are properly resized.
                 Initialization();
                 ExtDialog.IniFileLoad(); // InitObjects(); is skipped because it will be done after adding all the TP chart objects.
             }
@@ -526,7 +525,7 @@ int OnInit()
             if (obj_name == ExtDialog.Name() + "Caption")
             {
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, DARKMODE_BG_DARK_COLOR);
-                ObjectSetInteger(ChartID(), obj_name, OBJPROP_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_COLOR, DARKMODE_CONTROL_BORDER_COLOR);
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_BG_DARK_COLOR);
             }
             else if (obj_name == ExtDialog.Name() + "ClientBack")
@@ -544,26 +543,33 @@ int OnInit()
                 {
                     ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, ShortButtonColorAdjusted);
                 }
-                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BORDER_COLOR);
             }
             else if ((obj_name == ExtDialog.Name() + "m_BtnMainTrade") || (obj_name == ExtDialog.Name() + "m_BtnTrade") || (obj_name == ExtDialog.Name() + "m_OutsideTradeButton")) // Any of the Trade buttons (Main tab, Trading tab, outside).
             {
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, TradeButtonColorAdjusted);
-                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BORDER_COLOR);
             }
             else if (StringSubstr(obj_name, 0, StringLen(ExtDialog.Name() + "m_Edt")) == ExtDialog.Name() + "m_Edt")
             {
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, DARKMODE_EDIT_BG_COLOR);
-                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BORDER_COLOR);
             }
             else if (StringSubstr(obj_name, 0, StringLen(ExtDialog.Name() + "m_Btn")) == ExtDialog.Name() + "m_Btn")
             {
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, DARKMODE_BUTTON_BG_COLOR);
-                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BRODER_COLOR);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_CONTROL_BORDER_COLOR);
             }
             else if (StringSubstr(obj_name, 0, StringLen(ExtDialog.Name() + "m_Chk")) == ExtDialog.Name() + "m_Chk")
             {
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_COLOR, DARKMODE_TEXT_COLOR);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, DARKMODE_MAIN_AREA_BG_COLOR);
+                ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_MAIN_AREA_BG_COLOR);
+            }
+            else if (StringSubstr(obj_name, 0, StringLen(ExtDialog.Name() + "m_Rgp")) == ExtDialog.Name() + "m_Rgp")
+            {
+                if (ObjectGetInteger(ChartID(), obj_name, OBJPROP_TYPE) == OBJ_RECTANGLE_LABEL) ObjectSetInteger(ChartID(), obj_name, OBJPROP_COLOR, DARKMODE_MAIN_AREA_BG_COLOR);
+                else ObjectSetInteger(ChartID(), obj_name, OBJPROP_COLOR, DARKMODE_TEXT_COLOR);
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BGCOLOR, DARKMODE_MAIN_AREA_BG_COLOR);
                 ObjectSetInteger(ChartID(), obj_name, OBJPROP_BORDER_COLOR, DARKMODE_MAIN_AREA_BG_COLOR);
             }
@@ -790,39 +796,37 @@ void OnChartEvent(const int id,
 
     if (id == CHARTEVENT_KEYDOWN)
     {
+        short key = (short)lparam;
+        if (key < 65 || (key > 90 && key < 97) || key > 122) // Not a capital or normal letter.
+        {
+            // Get Unicode key value.
+            key = TranslateKey((int)lparam);
+            // In case of failure, use raw value.
+            if (key == -1) key = (short)lparam;
+        }
+
         // Trade direction:
-        if ((MainKey_SwitchEntryDirectionHotKey != 0) && (lparam == MainKey_SwitchEntryDirectionHotKey)
-            && ((((!ShiftRequired_SwitchEntryDirectionHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SwitchEntryDirectionHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SwitchEntryDirectionHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SwitchEntryDirectionHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0)))) // Control
-           )
+        if (HotkeyPressed(Hotkeys[HK_SwitchEntryDirection], key))
         {
             SwitchEntryDirection();
         }
         // Order type:
-        else if ((MainKey_SwitchOrderTypeHotKey != 0) && (lparam == MainKey_SwitchOrderTypeHotKey)
-            && ((((!ShiftRequired_SwitchOrderTypeHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SwitchOrderTypeHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SwitchOrderTypeHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SwitchOrderTypeHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_SwitchOrderType], key))
         {
             ExtDialog.OnClickBtnOrderType();
         }
         // Hide/Show lines:
-        else if ((MainKey_SwitchHideShowLinesHotKey != 0) && (lparam == MainKey_SwitchHideShowLinesHotKey)
-            && ((((!ShiftRequired_SwitchHideShowLinesHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SwitchHideShowLinesHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SwitchHideShowLinesHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SwitchHideShowLinesHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_SwitchHideShowLines], key))
         {
             ExtDialog.OnClickBtnLines();
         }
         // Trade:
-        else if ((MainKey_TradeHotKey != 0) && (lparam == MainKey_TradeHotKey)
-            && ((((!ShiftRequired_TradeHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_TradeHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_TradeHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_TradeHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_Trade], key))
         {
             Trade(); 
         }
         // Set stop-loss:
-        else if ((MainKey_SetStopLossHotKey != 0) && (lparam == MainKey_SetStopLossHotKey)
-            && ((((!ShiftRequired_SetStopLossHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SetStopLossHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SetStopLossHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SetStopLossHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_SetStopLoss], key))
         {
             // Capture point price location.
             int subwindow;
@@ -839,9 +843,7 @@ void OnChartEvent(const int id,
             }
         }
         // Set take-profit:
-        else if ((MainKey_SetTakeProfitHotKey != 0) && (lparam == MainKey_SetTakeProfitHotKey)
-            && ((((!ShiftRequired_SetTakeProfitHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SetTakeProfitHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SetTakeProfitHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SetTakeProfitHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_SetTakeProfit], key))
         {
             // Capture point price location.
             int subwindow;
@@ -864,14 +866,16 @@ void OnChartEvent(const int id,
                 if ((sets.TPDistanceInPoints) || (ShowATROptions)) ExtDialog.UpdateFixedTP();
                 ExtDialog.ShowTPRelatedEdits();
                 ExtDialog.RefreshValues();
+                if ((PrefillAdditionalTPsBasedOnMain) && (sets.TakeProfitsNumber > 1))
+                {
+                    ExtDialog.DoPrefillAdditionalTPsBasedOnMain();
+                }
                 ExtDialog.HideShowMaximize();
                 ExtDialog.MoveAndResize();
             }
         }
         // Set entry:
-        else if ((MainKey_SetEntryHotKey != 0) && (lparam == MainKey_SetEntryHotKey)
-            && ((((!ShiftRequired_SetEntryHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SetEntryHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SetEntryHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SetEntryHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_SetEntry], key))
         {
             // Capture point price location.
             int subwindow;
@@ -891,16 +895,12 @@ void OnChartEvent(const int id,
             }
         }
         // Minimize/maximize:
-        else if ((MainKey_MinimizeMaximizeHotkey != 0) && (lparam == MainKey_MinimizeMaximizeHotkey)
-            && ((((!ShiftRequired_MinimizeMaximizeHotkey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_MinimizeMaximizeHotkey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_MinimizeMaximizeHotkey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_MinimizeMaximizeHotkey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_MinimizeMaximize], key))
         {
             ExtDialog.EmulateMinMaxClick();
         }
         // Switch SL between points and level:
-        else if ((MainKey_SwitchSLPointsLevelHotKey != 0) && (lparam == MainKey_SwitchSLPointsLevelHotKey)
-            && ((((!ShiftRequired_SwitchSLPointsLevelHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SwitchSLPointsLevelHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SwitchSLPointsLevelHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SwitchSLPointsLevelHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_SwitchSLPointsLevel], key))
         {
             if (sets.SLDistanceInPoints) sets.SLDistanceInPoints = false; // If was in points, set to level.
             else
@@ -908,12 +908,11 @@ void OnChartEvent(const int id,
                 sets.SLDistanceInPoints = true; // If was in level, set to points.
                 sets.StopLoss = (int)MathRound(MathAbs(sets.StopLossLevel - sets.EntryLevel) / _Point);
             }
+            ExtDialog.UpdateSLLabelText(); // The label's (or button's) text differs between the level and points modes.
             ExtDialog.RefreshValues();
         }
         // Switch TP between points and level:
-        else if ((MainKey_SwitchTPPointsLevelHotKey != 0) && (lparam == MainKey_SwitchTPPointsLevelHotKey)
-            && ((((!ShiftRequired_SwitchTPPointsLevelHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) >= 0))   || ((ShiftRequired_SwitchTPPointsLevelHotKey) && (TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT) < 0))) // Shift
-            &&  (((!CtrlRequired_SwitchTPPointsLevelHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) >= 0)) || ((CtrlRequired_SwitchTPPointsLevelHotKey)  && (TerminalInfoInteger(TERMINAL_KEYSTATE_CONTROL) < 0))))) // Control
+        else if (HotkeyPressed(Hotkeys[HK_SwitchTPPointsLevel], key))
         {
             if (sets.TPDistanceInPoints) sets.TPDistanceInPoints = false; // If was in points, set to level.
             else
@@ -952,14 +951,15 @@ void OnChartEvent(const int id,
             {
                 int len = StringLen(ObjectPrefix + "TakeProfitLine");
                 int i = (int)StringToInteger(StringSubstr(sparam, len));
-                ExtDialog.UpdateAdditionalFixedTP(i);
+                if (i >= 1) ExtDialog.UpdateAdditionalFixedTP(i); // Prevents accessing AdditionalTPEdits[] at -1 if a stray object with a similar name is found.
             }
         }
 
         if (sparam == ObjectPrefix + "StopLossLine") StopLossLineIsBeingMoved = false; // In any case ending moving state for the stop-loss line.
         if (StringFind(sparam, ObjectPrefix + "TakeProfitLine") != -1) ArrayInitialize(TakeProfitLineIsBeingMoved, false); // In any case ending moving state for the take-profit line.
 
-        if (id != CHARTEVENT_CHART_CHANGE) ExtDialog.RefreshValues();
+        if (id == CHARTEVENT_CHART_CHANGE) ChartWidth = ChartGetInteger(0, CHART_WIDTH_IN_PIXELS);
+        else ExtDialog.RefreshValues();
 
         static bool prev_chart_on_top = false;
         // If this is an active chart, make sure the panel is visible (not behind the chart's borders). For inactive chart, this will work poorly, because inactive charts get minimized by MetaTrader.
