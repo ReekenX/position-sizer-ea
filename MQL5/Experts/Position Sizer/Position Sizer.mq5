@@ -185,7 +185,7 @@ input(name=INPUT_DESCRIPTION_SwitchSLPointsLevelHotKey) string SwitchSLPointsLev
 input(name=INPUT_DESCRIPTION_SwitchTPPointsLevelHotKey) string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
 input(name=INPUT_DESCRIPTION_SwitchStopLimitPointsLevelHotKey) string SwitchStopLimitPointsLevelHotKey = "Shift+L"; // SwitchStopLimitPointsLevelHotKey: Switch stop-limit price between points and level.
 input string SetTPGoalHotKey = "Shift+G"; // SetTPGoalHotKey: Set TP to this equity.
-input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Set pending entry at half discount.
+input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Place limit order with entry discounted by 1 pip.
 input string FindClosestSLHotKey = "Shift+O"; // FindClosestSLHotKey: Match SL to the closest high/low.
 input group INPUT_GROUP_DESCRIPTION_MISCELLANEOUS
 input(name=INPUT_DESCRIPTION_TP_Multiplier) double TP_Multiplier = 1; // TP Multiplier for SL value (for take-profit button).
@@ -1243,22 +1243,24 @@ void DoHalfPipSmallerPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
-void DoPlaceLimitOrderOnHalf()
+void DoPlaceDiscountedLimitOrder()
 {
     // Freeze price lines
     sets.EntryType = Pending;
 
-    double fullPriceRange = MathAbs(sets.EntryLevel - sets.StopLossLevel);
-    double halfPriceRange = fullPriceRange * 0.5;
+    // Discount the current entry by 1 pip (10 ticks) towards the SL.
+    int discountTicks = 10;
+    double discountedEntryPrice = (sets.TradeDirection == Long) ? sets.EntryLevel - (discountTicks * _Point)
+                                                                : sets.EntryLevel + (discountTicks * _Point);
 
     // Never place the entry closer to the SL than the minimum allowed SL distance.
-    if ((halfPriceRange / _Point) < CustomMinSL) halfPriceRange = CustomMinSL * _Point;
+    if ((MathAbs(discountedEntryPrice - sets.StopLossLevel) / _Point) < CustomMinSL) {
+        discountedEntryPrice = (sets.TradeDirection == Long) ? sets.StopLossLevel + (CustomMinSL * _Point)
+                                                             : sets.StopLossLevel - (CustomMinSL * _Point);
+    }
+    discountedEntryPrice = NormalizeDouble(discountedEntryPrice, _Digits);
 
-    double halfEntryPrice = (sets.TradeDirection == Long) ? sets.StopLossLevel + halfPriceRange
-                                                          : sets.StopLossLevel - halfPriceRange;
-    halfEntryPrice = NormalizeDouble(halfEntryPrice, _Digits);
-
-    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(halfEntryPrice, _Digits));
+    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedEntryPrice, _Digits));
     ExtDialog.OnEndEditEdtEntryLevel();
 
     // Push the current SL further away by extra ticks
@@ -1278,9 +1280,9 @@ void DoPlaceLimitOrderOnHalf()
     Trade();
 
     if (sets.TradeDirection == Long) {
-        Print("Placed BUY LIMIT at ", halfEntryPrice, " (half of the entry/SL range)");
+        Print("Placed BUY LIMIT at ", discountedEntryPrice, " (entry discounted by ", discountTicks, " ticks)");
     } else {
-        Print("Placed SELL LIMIT at ", halfEntryPrice, " (half of the entry/SL range)");
+        Print("Placed SELL LIMIT at ", discountedEntryPrice, " (entry discounted by ", discountTicks, " ticks)");
     }
 }
 
@@ -1860,7 +1862,7 @@ void OnChartEvent(const int id,
         }
         else if (HotkeyPressed(Hotkeys[HK_SetAdjustEntry], key))
         {
-            DoPlaceLimitOrderOnHalf();
+            DoPlaceDiscountedLimitOrder();
         }
         else if (HotkeyPressed(Hotkeys[HK_FindClosestSL], key))
         {
