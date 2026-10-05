@@ -63,8 +63,8 @@ enum ENUM_CUSTOM_STRATEGY
     CUSTOM_STRATEGY_DISCOUNTED_TRADE = 5  // Discounted Trade – safe SL and entry CustomMinSL ticks past the close
 };
 input ENUM_CUSTOM_STRATEGY CustomStrategy = CUSTOM_STRATEGY_REGULAR; // CustomStrategy: Trading strategy
-input int CustomMinSL = 11; // CustomMinSL: Min SL distance (ticks) from entry to allow trade
-input int CustomMaxSL = 100; // CustomMaxSL: Max SL distance (ticks) from entry to allow trade
+input int CustomMaxSLCap = 60; // CustomMaxSLCap: SL will be max this size if bigger SL was attempted
+int CustomMinSL = 11; // Min SL distance (ticks) from entry used by Aggressive/Discounted entries
 
 input group INPUT_GROUP_DESCRIPTION_COMPACTNESS
 input(name=INPUT_DESCRIPTION_ShowMainLineLabels) bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -756,15 +756,16 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    // Use safe stop but add extra ticks
-    if (CustomSafeTicks > 0) {
+    // Use safe stop but add extra ticks, capped at CustomMaxSLCap
+    int safeTicks = MathMin(CustomSafeTicks, CustomMaxSLCap);
+    if (safeTicks > 0) {
         // Regular Strategy
         if (shouldBuy) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, Period(), 1), MathMin(iLow(NULL, Period(), 2), iLow(NULL, Period(), 3))) - (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, Period(), 1), MathMin(iLow(NULL, Period(), 2), iLow(NULL, Period(), 3))) - (safeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
         else if (shouldSell) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, Period(), 1), MathMax(iHigh(NULL, Period(), 2), iHigh(NULL, Period(), 3))) + (CustomSafeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, Period(), 1), MathMax(iHigh(NULL, Period(), 2), iHigh(NULL, Period(), 3))) + (safeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
     }
@@ -815,14 +816,6 @@ void DoWaitConfirmationBar()
           ExtDialog.OnClickBtnTakeProfitsNumberMinus();
       }
       ExtDialog.ProcessTPChange(false);
-    }
-
-    // Skip trade if SL distance from entry is outside the allowed range
-    double slDistanceTicks = MathAbs(sets.EntryLevel - sets.StopLossLevel) / _Point;
-    if (slDistanceTicks < CustomMinSL || slDistanceTicks > CustomMaxSL) {
-        Print("Skipping trade: SL distance ", slDistanceTicks, " ticks is outside allowed range [", CustomMinSL, ", ", CustomMaxSL, "]");
-        CustomTradeSignal = "NONE";
-        return;
     }
 
     DoTrade();
