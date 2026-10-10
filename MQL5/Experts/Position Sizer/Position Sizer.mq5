@@ -756,16 +756,15 @@ void DoWaitConfirmationBar()
 
     Print("Confirmation bar received for ", CustomTradeSignal);
 
-    // Use safe stop but add extra ticks, capped at CustomMaxSLCap
+    // Push the existing SL further away by extra ticks, capped at CustomMaxSLCap
     int safeTicks = MathMin(CustomSafeTicks, CustomMaxSLCap);
     if (safeTicks > 0) {
-        // Regular Strategy
         if (shouldBuy) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(MathMin(iLow(NULL, Period(), 1), MathMin(iLow(NULL, Period(), 2), iLow(NULL, Period(), 3))) - (safeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel - (safeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
         else if (shouldSell) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(MathMax(iHigh(NULL, Period(), 1), MathMax(iHigh(NULL, Period(), 2), iHigh(NULL, Period(), 3))) + (safeTicks * _Point), _Digits));
+            ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel + (safeTicks * _Point), _Digits));
             ExtDialog.OnEndEditEdtSL();
         }
     }
