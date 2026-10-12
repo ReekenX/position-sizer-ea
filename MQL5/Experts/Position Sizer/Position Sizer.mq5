@@ -1237,47 +1237,32 @@ void DoHalfPipSmallerPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
-void DoPlaceDiscountedLimitOrder()
+void SetSLPrice()
 {
-    // Freeze price lines
-    sets.EntryType = Pending;
+    // Trade in the direction of the current bar: green - buy, red - sell.
+    bool isSellBar = iClose(NULL, Period(), 0) < iOpen(NULL, Period(), 0);
+    TRADE_DIRECTION barDirection = isSellBar ? Short : Long;
+    if (sets.TradeDirection != barDirection) SwitchEntryDirection();
 
-    // Discount the current entry by 1 pip (10 ticks) towards the SL.
-    int discountTicks = 10;
-    double discountedEntryPrice = (sets.TradeDirection == Long) ? sets.EntryLevel - (discountTicks * _Point)
-                                                                : sets.EntryLevel + (discountTicks * _Point);
-
-    // Never place the entry closer to the SL than the minimum allowed SL distance.
-    if ((MathAbs(discountedEntryPrice - sets.StopLossLevel) / _Point) < CustomMinSL) {
-        discountedEntryPrice = (sets.TradeDirection == Long) ? sets.StopLossLevel + (CustomMinSL * _Point)
-                                                             : sets.StopLossLevel - (CustomMinSL * _Point);
-    }
-    discountedEntryPrice = NormalizeDouble(discountedEntryPrice, _Digits);
-
-    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(discountedEntryPrice, _Digits));
-    ExtDialog.OnEndEditEdtEntryLevel();
-
-    // Push the current SL further away by extra ticks
-    if (CustomSafeTicks > 0) {
-        if (sets.TradeDirection == Long) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel - (CustomSafeTicks * _Point), _Digits));
-            ExtDialog.OnEndEditEdtSL();
-        }
-        else if (sets.TradeDirection == Short) {
-            ExtDialog.m_EdtSL.Text(DoubleToString(sets.StopLossLevel + (CustomSafeTicks * _Point), _Digits));
-            ExtDialog.OnEndEditEdtSL();
-        }
+    // Always an Instant order: cycle the order type button until it lands on Instant.
+    int guard = 0;
+    while (sets.EntryType != Instant && guard < 3)
+    {
+        ExtDialog.OnClickBtnOrderType();
+        guard++;
     }
 
+    // SL sits beyond the current bar's extreme, padded by CustomSafeTicks.
+    double slPrice = isSellBar ? iHigh(NULL, Period(), 0) + (CustomSafeTicks * _Point)
+                               : iLow(NULL, Period(), 0) - (CustomSafeTicks * _Point);
+    slPrice = NormalizeDouble(slPrice, _Digits);
+
+    ExtDialog.m_EdtSL.Text(DoubleToString(slPrice, _Digits));
+    ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
+    ChartRedraw();
 
-    DoTrade();
-
-    if (sets.TradeDirection == Long) {
-        Print("Placed BUY LIMIT at ", discountedEntryPrice, " (entry discounted by ", discountTicks, " ticks)");
-    } else {
-        Print("Placed SELL LIMIT at ", discountedEntryPrice, " (entry discounted by ", discountTicks, " ticks)");
-    }
+    Print("SL set to ", slPrice, " for ", (isSellBar ? "SELL" : "BUY"), " (current bar ", (isSellBar ? "high" : "low"), " + ", CustomSafeTicks, " safe ticks)");
 }
 
 void DoFetchWebCommands()
@@ -1856,7 +1841,7 @@ void OnChartEvent(const int id,
         }
         else if (HotkeyPressed(Hotkeys[HK_SetAdjustEntry], key))
         {
-            DoPlaceDiscountedLimitOrder();
+            SetSLPrice();
         }
         else if (HotkeyPressed(Hotkeys[HK_FindClosestSL], key))
         {
