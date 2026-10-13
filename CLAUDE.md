@@ -67,15 +67,12 @@ For MQL5 language reference, trading functions, and technical documentation, use
 - **ATR-based SL/TP**: Can set stops and targets using Average True Range
 - **Portfolio risk management**: Tracks current and potential portfolio exposure
 - **Web integration**: Custom web command functionality for external integrations
-- **Scaling logic**: Custom position scaling based on price movements
 
 ### Custom Modifications
 
 The codebase includes custom modifications from the original EarnForex version:
 - Custom equity goal setting (Press 'G' to set TP)
 - Web command integration for external systems
-- Position scaling logic with `AlreadyScaled` and `AlreadyUpdatedSL` flags
-- Price-based position cancellation (`CancelAtPrice`)
 - Custom trade signal handling
 
 ### Important Notes
