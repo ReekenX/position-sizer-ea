@@ -5,6 +5,7 @@ startup_window: shell
 windows:
   - editor: nvim .
   - shell:
+      - tmux set-option set-titles-string 'meta-trader'
   - claude:
       - alias run="tmux rename-window -t\${TMUX_PANE} 'claude'; clear; claude --dangerously-skip-permissions; tmux rename-window -t\${TMUX_PANE} '🔴 claude'"
       - run
