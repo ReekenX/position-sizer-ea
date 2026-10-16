@@ -999,25 +999,10 @@ void DoBreakEven()
         {
             if (PositionGetString(POSITION_SYMBOL) != SymbolForTrading) continue;
             if (sets.MagicNumber != 0 && PositionGetInteger(POSITION_MAGIC) != sets.MagicNumber) continue;
-            // Based on the commission if UseCommissionToSetTPDistance is set to true.
-            double extra_be_distance = 0;
-            if ((UseCommissionToSetTPDistance) && (sets.CommissionPerLot != 0))
-            {
-                // Calculate real commission in currency units.
-                CalculateCommission(); // Refreshes both the risk-side commission and CommissionReward.
-                double commission = CommissionReward; // The break-even distance has to cover the commission charged on a profitable trade (including the profit-only part).
-
-                // Extra BE Distance = Commission Size / Point_value.
-                // Commission Size = Commission * 2.
-                // Extra BE Distance = Commission * 2 / Point_value.
-                if ((UnitCost_reward != 0) && (TickSize != 0))
-                    extra_be_distance = commission * 2 / (UnitCost_reward / TickSize);
-            }
-
             if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
             {
                 double BE_threshold = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) + sets.BreakEvenPoints * SymbolInfoDouble(SymbolForTrading, SYMBOL_POINT), digits);
-                double BE_price = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) + extra_be_distance, digits);
+                double BE_price = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN), digits);
                 if ((be_line_color != clrNONE) && (BE_price > PositionGetDouble(POSITION_SL))) DrawBELine((int)PositionGetInteger(POSITION_TICKET), BE_threshold, BE_price); // Only draw if not triggered yet.
                 double Bid = SymbolInfoDouble(SymbolForTrading, SYMBOL_BID);
 
@@ -1034,7 +1019,7 @@ void DoBreakEven()
             else if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL)
             {
                 double BE_threshold = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) - sets.BreakEvenPoints * SymbolInfoDouble(SymbolForTrading, SYMBOL_POINT), digits);
-                double BE_price = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) - extra_be_distance, digits);
+                double BE_price = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN), digits);
                 if ((be_line_color != clrNONE) && ((BE_price < PositionGetDouble(POSITION_SL)) || (PositionGetDouble(POSITION_SL) == 0))) DrawBELine(PositionGetInteger(POSITION_TICKET), BE_threshold, BE_price);
                 double Ask = SymbolInfoDouble(SymbolForTrading, SYMBOL_ASK);
 
