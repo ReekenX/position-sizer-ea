@@ -42,7 +42,6 @@ string CustomTradeSignal = "NONE";
 datetime CustomCurrentBarIndex = 0;
 input double CustomEquityGoal = 0; // Close all trades when equity reaches this (0 = disabled)
 input int CustomSafeTicks = 10; // Ticks to add to the safe SL
-input int CustomMaxSLCap = 50; // CustomMaxSLCap: SL will be max this size if bigger SL was attempted
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 bool CustomWebRequestInProgress = false;
@@ -733,19 +732,6 @@ void DoWaitConfirmationBar()
     }
 
     Print("Confirmation bar received for ", CustomTradeSignal);
-
-    // Protect against an oversized SL: cap its distance from entry at CustomMaxSLCap ticks
-    if (CustomMaxSLCap > 0) {
-        double slTicks = MathAbs(sets.EntryLevel - sets.StopLossLevel) / _Point;
-        if (slTicks > CustomMaxSLCap) {
-            double cappedSL = shouldBuy ? sets.EntryLevel - (CustomMaxSLCap * _Point)
-                                        : sets.EntryLevel + (CustomMaxSLCap * _Point);
-            ExtDialog.m_EdtSL.Text(DoubleToString(NormalizeDouble(cappedSL, _Digits), _Digits));
-            ExtDialog.OnEndEditEdtSL();
-            ExtDialog.RefreshValues();
-            Print("SL distance ", slTicks, " ticks exceeds cap, SL moved to ", sets.StopLossLevel, " (", CustomMaxSLCap, " ticks)");
-        }
-    }
 
     DoTrade();
 
