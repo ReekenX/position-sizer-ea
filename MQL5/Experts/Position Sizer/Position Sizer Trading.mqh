@@ -999,53 +999,48 @@ void DoBreakEven()
         {
             if (PositionGetString(POSITION_SYMBOL) != SymbolForTrading) continue;
             if (sets.MagicNumber != 0 && PositionGetInteger(POSITION_MAGIC) != sets.MagicNumber) continue;
-            // Based on the commission if UseCommissionToSetTPDistance is set to true.
-            double extra_be_distance = 0;
-            if ((UseCommissionToSetTPDistance) && (sets.CommissionPerLot != 0))
-            {
-                // Calculate real commission in currency units.
-                CalculateCommission(); // Refreshes both the risk-side commission and CommissionReward.
-                double commission = CommissionReward; // The break-even distance has to cover the commission charged on a profitable trade (including the profit-only part).
-
-                // Extra BE Distance = Commission Size / Point_value.
-                // Commission Size = Commission * 2.
-                // Extra BE Distance = Commission * 2 / Point_value.
-                if ((UnitCost_reward != 0) && (TickSize != 0))
-                    extra_be_distance = commission * 2 / (UnitCost_reward / TickSize);
-            }
+            string be_flag = "PS-BE-" + IntegerToString(ticket);
+            if (GlobalVariableCheck(be_flag)) continue; // SL was already reduced for this position.
+            double open_price = PositionGetDouble(POSITION_PRICE_OPEN);
+            double sl = PositionGetDouble(POSITION_SL);
+            if (sl == 0) continue; // Nothing to reduce.
 
             if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
             {
-                double BE_threshold = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) + sets.BreakEvenPoints * SymbolInfoDouble(SymbolForTrading, SYMBOL_POINT), digits);
-                double BE_price = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) + extra_be_distance, digits);
-                if ((be_line_color != clrNONE) && (BE_price > PositionGetDouble(POSITION_SL))) DrawBELine((int)PositionGetInteger(POSITION_TICKET), BE_threshold, BE_price); // Only draw if not triggered yet.
+                if (sl >= open_price) continue; // SL is already at or beyond entry.
+                double BE_threshold = NormalizeDouble(open_price + sets.BreakEvenPoints * SymbolInfoDouble(SymbolForTrading, SYMBOL_POINT), digits);
+                double BE_price = NormalizeDouble(open_price - (open_price - sl) * 0.75, digits); // Reduce SL distance by 25%.
+                if (be_line_color != clrNONE) DrawBELine((int)PositionGetInteger(POSITION_TICKET), BE_threshold, BE_price);
                 double Bid = SymbolInfoDouble(SymbolForTrading, SYMBOL_BID);
 
-                if ((Bid >= BE_threshold) && (Bid >= BE_price) && (BE_price > PositionGetDouble(POSITION_SL))) // Only move to BE if the price reached the necessary threshold, the price is above the calculated BE price, and the current stop-loss is lower.
+                if ((Bid >= BE_threshold) && (BE_price > sl)) // Only reduce SL once the price reached the necessary threshold.
                 {
-                    double prev_sl = PositionGetDouble(POSITION_SL); // Remember old SL for reporting.
-                    // Write Open price to the SL field.
                     if (!Trade.PositionModify(ticket, BE_price, PositionGetDouble(POSITION_TP)))
                         Print(TRANSLATION_MESSAGE_POSITIONMODIFY_FAILED_BUY_BE + ": " + ErrorDescription(GetLastError()) + ".");
                     else
-                        Print(TRANSLATION_MESSAGE_BE_APPLIED + " - " + SymbolForTrading + " " + TRANSLATION_MESSAGE_BUY + " #" + IntegerToString(ticket) + " " + TRANSLATION_LABEL_POSITION_SIZE + " = " + DoubleToString(PositionGetDouble(POSITION_VOLUME), LotStep_digits) + ", " + TRANSLATION_LABEL_ENTRY + " = " + DoubleToString(PositionGetDouble(POSITION_PRICE_OPEN), digits) + ", " + TRANSLATION_MESSAGE_SL_WAS_MOVED_FROM + " " + DoubleToString(prev_sl, digits) + ".");
+                    {
+                        GlobalVariableSet(be_flag, 1);
+                        Print(TRANSLATION_MESSAGE_BE_APPLIED + " - " + SymbolForTrading + " " + TRANSLATION_MESSAGE_BUY + " #" + IntegerToString(ticket) + " " + TRANSLATION_LABEL_POSITION_SIZE + " = " + DoubleToString(PositionGetDouble(POSITION_VOLUME), LotStep_digits) + ", " + TRANSLATION_LABEL_ENTRY + " = " + DoubleToString(open_price, digits) + ", " + TRANSLATION_MESSAGE_SL_WAS_MOVED_FROM + " " + DoubleToString(sl, digits) + " " + TRANSLATION_MESSAGE_SL_WAS_MOVED_TO + " " + DoubleToString(BE_price, digits) + ".");
+                    }
                 }
             }
             else if ((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL)
             {
-                double BE_threshold = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) - sets.BreakEvenPoints * SymbolInfoDouble(SymbolForTrading, SYMBOL_POINT), digits);
-                double BE_price = NormalizeDouble(PositionGetDouble(POSITION_PRICE_OPEN) - extra_be_distance, digits);
-                if ((be_line_color != clrNONE) && ((BE_price < PositionGetDouble(POSITION_SL)) || (PositionGetDouble(POSITION_SL) == 0))) DrawBELine(PositionGetInteger(POSITION_TICKET), BE_threshold, BE_price);
+                if (sl <= open_price) continue; // SL is already at or beyond entry.
+                double BE_threshold = NormalizeDouble(open_price - sets.BreakEvenPoints * SymbolInfoDouble(SymbolForTrading, SYMBOL_POINT), digits);
+                double BE_price = NormalizeDouble(open_price + (sl - open_price) * 0.75, digits); // Reduce SL distance by 25%.
+                if (be_line_color != clrNONE) DrawBELine(PositionGetInteger(POSITION_TICKET), BE_threshold, BE_price);
                 double Ask = SymbolInfoDouble(SymbolForTrading, SYMBOL_ASK);
 
-                if ((Ask <= BE_threshold) && (Ask <= BE_price) && ((BE_price < PositionGetDouble(POSITION_SL)) || (PositionGetDouble(POSITION_SL) == 0))) // Only move to BE if the price reached the necessary threshold, the price below the calculated BE price, and the current stop-loss is higher (or zero).
+                if ((Ask <= BE_threshold) && (BE_price < sl)) // Only reduce SL once the price reached the necessary threshold.
                 {
-                    double prev_sl = PositionGetDouble(POSITION_SL); // Remember old SL for reporting.
-                    // Write Open price to the SL field.
                     if (!Trade.PositionModify(ticket, BE_price, PositionGetDouble(POSITION_TP)))
                         Print(TRANSLATION_MESSAGE_POSITIONMODIFY_FAILED_SELL_BE + ": " + ErrorDescription(GetLastError()) + ".");
                     else
-                        Print(TRANSLATION_MESSAGE_BE_APPLIED + " - " + SymbolForTrading + " " + TRANSLATION_MESSAGE_SELL + " #" + IntegerToString(ticket) + " " + TRANSLATION_LABEL_POSITION_SIZE + " = " + DoubleToString(PositionGetDouble(POSITION_VOLUME), LotStep_digits) + ", " + TRANSLATION_LABEL_ENTRY + " = " + DoubleToString(PositionGetDouble(POSITION_PRICE_OPEN), digits) + ", " + TRANSLATION_MESSAGE_SL_WAS_MOVED_FROM + " " + DoubleToString(prev_sl, digits) + ".");
+                    {
+                        GlobalVariableSet(be_flag, 1);
+                        Print(TRANSLATION_MESSAGE_BE_APPLIED + " - " + SymbolForTrading + " " + TRANSLATION_MESSAGE_SELL + " #" + IntegerToString(ticket) + " " + TRANSLATION_LABEL_POSITION_SIZE + " = " + DoubleToString(PositionGetDouble(POSITION_VOLUME), LotStep_digits) + ", " + TRANSLATION_LABEL_ENTRY + " = " + DoubleToString(open_price, digits) + ", " + TRANSLATION_MESSAGE_SL_WAS_MOVED_FROM + " " + DoubleToString(sl, digits) + " " + TRANSLATION_MESSAGE_SL_WAS_MOVED_TO + " " + DoubleToString(BE_price, digits) + ".");
+                    }
                 }
             }
         }
