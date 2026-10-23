@@ -165,7 +165,7 @@ input(name=INPUT_DESCRIPTION_SwitchSLPointsLevelHotKey) string SwitchSLPointsLev
 input(name=INPUT_DESCRIPTION_SwitchTPPointsLevelHotKey) string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
 input(name=INPUT_DESCRIPTION_SwitchStopLimitPointsLevelHotKey) string SwitchStopLimitPointsLevelHotKey = "Shift+L"; // SwitchStopLimitPointsLevelHotKey: Switch stop-limit price between points and level.
 input string SetTPGoalHotKey = "Shift+G"; // SetTPGoalHotKey: Set TP to this equity.
-input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Place limit order with entry discounted by 1 pip.
+input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Place 1R STOP scaling order for the single open position.
 input string FindClosestSLHotKey = "Shift+O"; // FindClosestSLHotKey: Match SL to the closest high/low.
 input group INPUT_GROUP_DESCRIPTION_MISCELLANEOUS
 input(name=INPUT_DESCRIPTION_TP_Multiplier) double TP_Multiplier = 1; // TP Multiplier for SL value (for take-profit button).
@@ -963,32 +963,79 @@ void DoHalfPipSmallerPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
-void SetSLPrice()
+void DoPlaceScalingStopOrder()
 {
-    // Trade in the direction of the current bar: green - buy, red - sell.
-    bool isSellBar = iClose(NULL, Period(), 0) < iOpen(NULL, Period(), 0);
-    TRADE_DIRECTION barDirection = isSellBar ? Short : Long;
-    if (sets.TradeDirection != barDirection) SwitchEntryDirection();
+    // Find the single open position on this symbol.
+    int positions = 0;
+    ulong ticket = 0;
+    for (int i = PositionsTotal() - 1; i >= 0; i--)
+    {
+        ulong t = PositionGetTicket(i);
+        if (t == 0) continue;
+        if (PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+        if ((sets.MagicNumber != 0) && (PositionGetInteger(POSITION_MAGIC) != sets.MagicNumber)) continue;
+        positions++;
+        ticket = t;
+    }
+    if (positions != 1)
+    {
+        Print("Scaling skipped: expected 1 open position, found ", positions, ".");
+        return;
+    }
 
-    // Always an Instant order: cycle the order type button until it lands on Instant.
+    // Do not stack a second scaling order on top of an existing pending one.
+    for (int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        if (OrderGetTicket(i) == 0) continue;
+        if (OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
+        if ((sets.MagicNumber != 0) && (OrderGetInteger(ORDER_MAGIC) != sets.MagicNumber)) continue;
+        Print("Scaling skipped: a pending order already exists.");
+        return;
+    }
+
+    if (!PositionSelectByTicket(ticket)) return;
+    double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+    double slPrice = PositionGetDouble(POSITION_SL);
+    bool isLong = PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY;
+    if (slPrice == 0)
+    {
+        Print("Scaling skipped: the open position has no SL, so 1R is unknown.");
+        return;
+    }
+
+    // Scaling entry sits 1R beyond the first entry; its SL is the first entry.
+    double oneR = MathAbs(entryPrice - slPrice);
+    double scaleEntry = NormalizeDouble(isLong ? entryPrice + oneR : entryPrice - oneR, _Digits);
+
+    // A STOP order is only valid while price has not yet reached 1R.
+    if ((isLong && SymbolInfoDouble(_Symbol, SYMBOL_ASK) >= scaleEntry) ||
+        (!isLong && SymbolInfoDouble(_Symbol, SYMBOL_BID) <= scaleEntry))
+    {
+        Print("Scaling skipped: price is already beyond 1R (", scaleEntry, ").");
+        return;
+    }
+
+    TRADE_DIRECTION positionDirection = isLong ? Long : Short;
+    if (sets.TradeDirection != positionDirection) SwitchEntryDirection();
+
+    // Pending order type: cycle the order type button until it lands on Pending.
     int guard = 0;
-    while (sets.EntryType != Instant && guard < 3)
+    while (sets.EntryType != Pending && guard < 3)
     {
         ExtDialog.OnClickBtnOrderType();
         guard++;
     }
 
-    // SL sits beyond the current bar's extreme, padded by CustomSafeTicks.
-    double slPrice = isSellBar ? iHigh(NULL, Period(), 0) + (CustomSafeTicks * _Point)
-                               : iLow(NULL, Period(), 0) - (CustomSafeTicks * _Point);
-    slPrice = NormalizeDouble(slPrice, _Digits);
-
-    ExtDialog.m_EdtSL.Text(DoubleToString(slPrice, _Digits));
+    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(scaleEntry, _Digits));
+    ExtDialog.OnEndEditEdtEntryLevel();
+    ExtDialog.m_EdtSL.Text(DoubleToString(entryPrice, _Digits));
     ExtDialog.OnEndEditEdtSL();
     ExtDialog.RefreshValues();
     ChartRedraw();
 
-    Print("SL set to ", slPrice, " for ", (isSellBar ? "SELL" : "BUY"), " (current bar ", (isSellBar ? "high" : "low"), " + ", CustomSafeTicks, " safe ticks)");
+    DoTrade();
+
+    Print("Placed ", (isLong ? "BUY" : "SELL"), " STOP scaling order at ", scaleEntry, " (1R = ", DoubleToString(oneR / _Point, 0), " ticks), SL at first entry ", entryPrice);
 }
 
 void DoFetchWebCommands()
@@ -1454,7 +1501,7 @@ void OnChartEvent(const int id,
         }
         else if (HotkeyPressed(Hotkeys[HK_SetAdjustEntry], key))
         {
-            SetSLPrice();
+            DoPlaceScalingStopOrder();
         }
         else if (HotkeyPressed(Hotkeys[HK_FindClosestSL], key))
         {
