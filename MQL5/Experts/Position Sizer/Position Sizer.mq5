@@ -874,15 +874,28 @@ void DoSnapEntry()
     double newEntry = -1;
     double minDiff = 999999999;
     for (int i = 1; i <= 50; i++) {
-        // Check distance between current Entry and tested bar close
-        double diff = MathAbs((iClose(NULL, Period(), i) - sets.EntryLevel) / _Point);
-        if (diff < minDiff) {
-            minDiff = diff;
-            newEntry = iClose(NULL, Period(), i);
+        // High is an edge only if the previous bar high is lower
+        double high = iHigh(NULL, Period(), i);
+        if (iHigh(NULL, Period(), i + 1) < high) {
+            double diff = MathAbs((high - sets.EntryLevel) / _Point);
+            if (diff < minDiff) {
+                minDiff = diff;
+                newEntry = high;
+            }
+        }
+
+        // Low is an edge only if the previous bar low is higher
+        double low = iLow(NULL, Period(), i);
+        if (iLow(NULL, Period(), i + 1) > low) {
+            double diff = MathAbs((low - sets.EntryLevel) / _Point);
+            if (diff < minDiff) {
+                minDiff = diff;
+                newEntry = low;
+            }
         }
     }
 
-    // Update Entry to the closest close
+    // Update Entry to the closest high/low edge
     if (newEntry > 0) {
         ExtDialog.m_EdtEntryLevel.Text(DoubleToString(newEntry, _Digits));
         ExtDialog.OnEndEditEdtEntryLevel();
