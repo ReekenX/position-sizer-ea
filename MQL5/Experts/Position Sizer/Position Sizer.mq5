@@ -44,6 +44,7 @@ input double CustomEquityGoal = 0; // Close all trades when equity reaches this 
 input int CustomSafeTicks = 10; // Ticks to add to the safe SL
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
+input bool CustomOCOEnabled = true; // Cancel opposite pending orders when one side gets filled (OCO)
 bool CustomWebRequestInProgress = false;
 
 input group INPUT_GROUP_DESCRIPTION_COMPACTNESS
@@ -1594,6 +1595,50 @@ void OnTrade()
 {
     ExtDialog.RefreshValues();
     ChartRedraw();
+}
+
+//+------------------------------------------------------------------+
+//| Trade transaction handler                                        |
+//+------------------------------------------------------------------+
+void OnTradeTransaction(const MqlTradeTransaction &trans,
+                        const MqlTradeRequest &request,
+                        const MqlTradeResult &result)
+{
+    if (trans.type != TRADE_TRANSACTION_DEAL_ADD) return;
+    DoCancelOppositeOrders(trans.deal);
+}
+
+// One-cancels-other: once a deal opens a position, delete pending orders of the opposite direction on this symbol.
+void DoCancelOppositeOrders(const ulong deal)
+{
+    if (!CustomOCOEnabled) return;
+    if (!HistoryDealSelect(deal)) return;
+    if (HistoryDealGetString(deal, DEAL_SYMBOL) != _Symbol) return;
+    if ((sets.MagicNumber != 0) && (HistoryDealGetInteger(deal, DEAL_MAGIC) != sets.MagicNumber)) return;
+
+    ENUM_DEAL_ENTRY entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(deal, DEAL_ENTRY);
+    if ((entry != DEAL_ENTRY_IN) && (entry != DEAL_ENTRY_INOUT)) return;
+
+    ENUM_DEAL_TYPE deal_type = (ENUM_DEAL_TYPE)HistoryDealGetInteger(deal, DEAL_TYPE);
+    if ((deal_type != DEAL_TYPE_BUY) && (deal_type != DEAL_TYPE_SELL)) return;
+    bool filled_buy = (deal_type == DEAL_TYPE_BUY);
+
+    CTrade trade;
+    for (int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        ulong ticket = OrderGetTicket(i);
+        if (ticket == 0) continue;
+        if (OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
+        if ((sets.MagicNumber != 0) && (OrderGetInteger(ORDER_MAGIC) != sets.MagicNumber)) continue;
+
+        ENUM_ORDER_TYPE order_type = (ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+        bool is_sell_pending = (order_type == ORDER_TYPE_SELL_STOP) || (order_type == ORDER_TYPE_SELL_LIMIT) || (order_type == ORDER_TYPE_SELL_STOP_LIMIT);
+        bool is_buy_pending = (order_type == ORDER_TYPE_BUY_STOP) || (order_type == ORDER_TYPE_BUY_LIMIT) || (order_type == ORDER_TYPE_BUY_STOP_LIMIT);
+        if ((filled_buy && !is_sell_pending) || (!filled_buy && !is_buy_pending)) continue;
+
+        if (trade.OrderDelete(ticket)) Print("OCO: ", (filled_buy ? "Buy" : "Sell"), " filled. Cancelled opposite pending order #", ticket, ".");
+        else Print("OCO: Failed to cancel pending order #", ticket, ". Error: ", trade.ResultRetcodeDescription());
+    }
 }
 
 //+------------------------------------------------------------------+
