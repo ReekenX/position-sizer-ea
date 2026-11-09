@@ -65,7 +65,7 @@ enum HOTKEY_ID
     HK_SwitchTPPointsLevel,
     HK_SwitchStopLimitPointsLevel,
     HK_SetTPGoal,
-    HK_SetAdjustEntry,
+    HK_ContinuationBreakout,
     HK_FindClosestSL,
     HK_COUNT // Number of hotkeys - keep last.
 };

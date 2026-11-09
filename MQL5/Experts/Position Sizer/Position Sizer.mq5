@@ -45,7 +45,26 @@ input int CustomSafeTicks = 10; // Ticks to add to the safe SL
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 input bool CustomOCOEnabled = true; // Cancel opposite pending orders when one side gets filled (OCO)
+input int CustomCBSwing = 3; // Continuation breakout: swing candles on each side (1-5)
+input int CustomCBSessionStartHour = 8; // Continuation breakout: London session start (London time)
+input int CustomCBSessionEndHour = 17; // Continuation breakout: London session end (London time)
+input int CustomCBServerGMTWinter = 2; // Continuation breakout: broker server GMT offset in winter
+input bool CustomCBServerUSDST = true; // Continuation breakout: broker shifts +1h on US DST dates
 bool CustomWebRequestInProgress = false;
+bool CBEnabled = false;
+double CBSLDistance = 0;
+double CBRRR = 0;
+double CBLots = 0;
+double CBLevelHigh = 0;
+double CBLevelLow = 0;
+bool CBHighTaken = true;
+bool CBLowTaken = true;
+datetime CBLastLevelBar = 0;
+datetime CBBuyFailBar = 0;
+datetime CBSellFailBar = 0;
+long CBSessionMinute = -1;
+bool CBInSession = false;
+CTrade CBTrade;
 
 input group INPUT_GROUP_DESCRIPTION_COMPACTNESS
 input(name=INPUT_DESCRIPTION_ShowMainLineLabels) bool ShowMainLineLabels = true; // ShowMainLineLabels: Show point distance for TP/SL near lines?
@@ -166,7 +185,7 @@ input(name=INPUT_DESCRIPTION_SwitchSLPointsLevelHotKey) string SwitchSLPointsLev
 input(name=INPUT_DESCRIPTION_SwitchTPPointsLevelHotKey) string SwitchTPPointsLevelHotKey = "Shift+P"; // SwitchTPPointsLevelHotKey: Switch TP between points and level.
 input(name=INPUT_DESCRIPTION_SwitchStopLimitPointsLevelHotKey) string SwitchStopLimitPointsLevelHotKey = "Shift+L"; // SwitchStopLimitPointsLevelHotKey: Switch stop-limit price between points and level.
 input string SetTPGoalHotKey = "Shift+G"; // SetTPGoalHotKey: Set TP to this equity.
-input string SetAdjustEntryHotKey = "Shift+E"; // SetAdjustEntryHotKey: Place 1R STOP scaling order for the single open position.
+input string ContinuationBreakoutHotKey = "Shift+E"; // ContinuationBreakoutHotKey: Start/stop the continuation breakout strategy.
 input string FindClosestSLHotKey = "Shift+O"; // FindClosestSLHotKey: Match SL to the closest high/low.
 input group INPUT_GROUP_DESCRIPTION_MISCELLANEOUS
 input(name=INPUT_DESCRIPTION_TP_Multiplier) double TP_Multiplier = 1; // TP Multiplier for SL value (for take-profit button).
@@ -450,7 +469,7 @@ int OnInit()
         SetupHotkey(SwitchStopLimitPointsLevelHotKey, Hotkeys[HK_SwitchStopLimitPointsLevel]);
         SetupHotkey(MinimizeMaximizeHotkey,     Hotkeys[HK_MinimizeMaximize]);
         SetupHotkey(SetTPGoalHotKey,            Hotkeys[HK_SetTPGoal]);
-        SetupHotkey(SetAdjustEntryHotKey,       Hotkeys[HK_SetAdjustEntry]);
+        SetupHotkey(ContinuationBreakoutHotKey, Hotkeys[HK_ContinuationBreakout]);
         SetupHotkey(FindClosestSLHotKey,        Hotkeys[HK_FindClosestSL]);
     }
     else if (OldSymbol != _Symbol)
@@ -644,6 +663,14 @@ void OnDeinit(const int reason)
     
     EventKillTimer();
 
+    // The strategy state does not survive a reload, so leave no orphaned breakout orders behind.
+    if ((CBEnabled) && (reason != REASON_CHARTCHANGE))
+    {
+        CBEnabled = false;
+        CBDeleteAllPending();
+        Comment("");
+    }
+
     if (reason == REASON_TEMPLATE) sets.TemplateChanged = true; // Will be used to select lines according to the DefaultLinesSelected input parameter.
 
     if ((reason == REASON_CLOSE) || (reason == REASON_REMOVE) || (reason == REASON_CHARTCLOSE) || (reason == REASON_PROGRAM))
@@ -705,6 +732,7 @@ void OnTick()
     DoFetchWebCommands();
     DoWaitConfirmationBar();
     DoCloseAllOnEquityReach();
+    DoContinuationBreakout();
 }
 
 void DoCancelAutoTrade()
@@ -964,79 +992,279 @@ void DoHalfPipSmallerPullbackEntry()
     ExtDialog.RefreshValues();
 }
 
-void DoPlaceScalingStopOrder()
+// Continuation breakout: a buy stop rests at the latest swing high and a sell stop at the latest swing low,
+// during the London session only. SL distance, RRR and position size are taken from the panel when it starts.
+void DoToggleContinuationBreakout()
 {
-    // Find the single open position on this symbol.
-    int positions = 0;
-    ulong ticket = 0;
+    if (CBEnabled)
+    {
+        CBEnabled = false;
+        CBDeleteAllPending();
+        Comment("");
+        Print("Continuation breakout stopped. Its pending orders were deleted.");
+        return;
+    }
+
+    if ((CustomCBSwing < 1) || (CustomCBSwing > 5))
+    {
+        Print("Continuation breakout not started: swing candles must be 1-5.");
+        return;
+    }
+
+    ExtDialog.RefreshValues();
+    CBSLDistance = MathAbs(sets.EntryLevel - sets.StopLossLevel);
+    CBRRR = CustomTPMultiplier;
+    CBLots = OutputPositionSize;
+    if ((CBSLDistance <= 0) || (CBRRR <= 0) || (CBLots <= 0))
+    {
+        Print("Continuation breakout not started: the panel needs an SL, RRR and position size.");
+        return;
+    }
+
+    CBSeedLevels();
+    CBLastLevelBar = iTime(_Symbol, _Period, 0);
+    CBSessionMinute = -1;
+    CBInSession = false;
+    CBBuyFailBar = 0;
+    CBSellFailBar = 0;
+    CBEnabled = true;
+
+    string info = "Continuation breakout ON | SL " + DoubleToString(CBSLDistance / _Point, 0) + " points | 1:" + DoubleToString(CBRRR, 1) + " RRR | " + DoubleToString(CBLots, 2) + " lots";
+    Comment(info);
+    Print(info);
+}
+
+void DoContinuationBreakout()
+{
+    if (!CBEnabled) return;
+
+    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+
+    // Price traded through a live level: that breakout is used up.
+    if ((CBLevelHigh > 0) && (!CBHighTaken) && (bid >= CBLevelHigh)) CBHighTaken = true;
+    if ((CBLevelLow > 0) && (!CBLowTaken) && (bid <= CBLevelLow)) CBLowTaken = true;
+
+    // A chart candle just completed: it may confirm a new swing.
+    datetime bar = iTime(_Symbol, _Period, 0);
+    if (bar != CBLastLevelBar)
+    {
+        CBLastLevelBar = bar;
+        int mid = CustomCBSwing + 1;
+        if (CBIsSwingHigh(mid)) { CBLevelHigh = iHigh(_Symbol, _Period, mid); CBHighTaken = false; }
+        if (CBIsSwingLow(mid)) { CBLevelLow = iLow(_Symbol, _Period, mid); CBLowTaken = false; }
+    }
+
+    // Session: close the breakout positions on the first tick after it ends.
+    long minute = (long)(TimeCurrent() / 60);
+    if (minute != CBSessionMinute)
+    {
+        CBSessionMinute = minute;
+        bool wasInSession = CBInSession;
+        CBInSession = CBIsInSession(TimeCurrent());
+        if (wasInSession && !CBInSession) CBCloseAllPositions();
+    }
+
+    bool armLong = CBInSession && !CBHighTaken && (CBLevelHigh > 0) && (ask < CBLevelHigh);
+    bool armShort = CBInSession && !CBLowTaken && (CBLevelLow > 0) && (bid > CBLevelLow);
+    if (armLong) CBArmPending(ORDER_TYPE_BUY_STOP, CBLevelHigh); else CBDeletePending(ORDER_TYPE_BUY_STOP);
+    if (armShort) CBArmPending(ORDER_TYPE_SELL_STOP, CBLevelLow); else CBDeletePending(ORDER_TYPE_SELL_STOP);
+}
+
+// A fill uses up its level. With OCO on, the opposite order is cancelled, so its level is used up too.
+void CBOnDealAdd(const ulong deal)
+{
+    if (!CBEnabled) return;
+    if (!HistoryDealSelect(deal)) return;
+    if (HistoryDealGetString(deal, DEAL_SYMBOL) != _Symbol) return;
+    if ((sets.MagicNumber != 0) && (HistoryDealGetInteger(deal, DEAL_MAGIC) != sets.MagicNumber)) return;
+    if (HistoryDealGetInteger(deal, DEAL_ENTRY) != DEAL_ENTRY_IN) return;
+    if (StringFind(HistoryDealGetString(deal, DEAL_COMMENT), "CB ") != 0) return;
+
+    if (HistoryDealGetInteger(deal, DEAL_TYPE) == DEAL_TYPE_BUY) CBHighTaken = true;
+    else CBLowTaken = true;
+    if (CustomOCOEnabled)
+    {
+        CBHighTaken = true;
+        CBLowTaken = true;
+    }
+}
+
+// The candle at shift mid is a swing high if its high is above the highs of CustomCBSwing candles on each side.
+bool CBIsSwingHigh(const int mid)
+{
+    double midHigh = iHigh(_Symbol, _Period, mid);
+    if (midHigh == 0) return false;
+    for (int s = mid - CustomCBSwing; s <= mid + CustomCBSwing; s++)
+    {
+        if (s == mid) continue;
+        if (iHigh(_Symbol, _Period, s) >= midHigh) return false;
+    }
+    return true;
+}
+
+bool CBIsSwingLow(const int mid)
+{
+    double midLow = iLow(_Symbol, _Period, mid);
+    if (midLow == 0) return false;
+    for (int s = mid - CustomCBSwing; s <= mid + CustomCBSwing; s++)
+    {
+        if (s == mid) continue;
+        if (iLow(_Symbol, _Period, s) <= midLow) return false;
+    }
+    return true;
+}
+
+// On start, pick up the most recent confirmed swings, unless price has already traded through them.
+void CBSeedLevels()
+{
+    CBLevelHigh = 0;
+    CBLevelLow = 0;
+    CBHighTaken = true;
+    CBLowTaken = true;
+    for (int mid = CustomCBSwing + 1; mid < 200; mid++)
+    {
+        if (CBLevelHigh == 0 && CBIsSwingHigh(mid))
+        {
+            CBLevelHigh = iHigh(_Symbol, _Period, mid);
+            CBHighTaken = iHigh(_Symbol, _Period, iHighest(_Symbol, _Period, MODE_HIGH, mid, 0)) >= CBLevelHigh;
+        }
+        if (CBLevelLow == 0 && CBIsSwingLow(mid))
+        {
+            CBLevelLow = iLow(_Symbol, _Period, mid);
+            CBLowTaken = iLow(_Symbol, _Period, iLowest(_Symbol, _Period, MODE_LOW, mid, 0)) <= CBLevelLow;
+        }
+        if (CBLevelHigh > 0 && CBLevelLow > 0) break;
+    }
+}
+
+bool CBIsOwnOrder()
+{
+    if (OrderGetString(ORDER_SYMBOL) != _Symbol) return false;
+    if ((sets.MagicNumber != 0) && (OrderGetInteger(ORDER_MAGIC) != sets.MagicNumber)) return false;
+    return StringFind(OrderGetString(ORDER_COMMENT), "CB ") == 0;
+}
+
+// Pending stop order of one side; 0 when none.
+ulong CBFindPending(const ENUM_ORDER_TYPE type)
+{
+    for (int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        ulong t = OrderGetTicket(i);
+        if (t == 0) continue;
+        if (!CBIsOwnOrder()) continue;
+        if ((ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE) == type) return t;
+    }
+    return 0;
+}
+
+void CBDeletePending(const ENUM_ORDER_TYPE type)
+{
+    ulong t = CBFindPending(type);
+    if (t != 0) CBTrade.OrderDelete(t);
+}
+
+void CBDeleteAllPending()
+{
+    for (int i = OrdersTotal() - 1; i >= 0; i--)
+    {
+        ulong t = OrderGetTicket(i);
+        if (t == 0) continue;
+        if (CBIsOwnOrder()) CBTrade.OrderDelete(t);
+    }
+}
+
+void CBCloseAllPositions()
+{
     for (int i = PositionsTotal() - 1; i >= 0; i--)
     {
         ulong t = PositionGetTicket(i);
         if (t == 0) continue;
         if (PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
         if ((sets.MagicNumber != 0) && (PositionGetInteger(POSITION_MAGIC) != sets.MagicNumber)) continue;
-        positions++;
-        ticket = t;
+        if (StringFind(PositionGetString(POSITION_COMMENT), "CB ") != 0) continue;
+        CBTrade.PositionClose(t);
     }
-    if (positions != 1)
+}
+
+// Place the stop order at the level, or move it there if it already rests elsewhere.
+// A rejected order is retried on the next bar, not on every tick.
+void CBArmPending(const ENUM_ORDER_TYPE type, const double level)
+{
+    bool isBuy = (type == ORDER_TYPE_BUY_STOP);
+    datetime bar = iTime(_Symbol, _Period, 0);
+    if ((isBuy ? CBBuyFailBar : CBSellFailBar) == bar) return;
+
+    double price = NormalizeDouble(level, _Digits);
+    double sl = NormalizeDouble(isBuy ? price - CBSLDistance : price + CBSLDistance, _Digits);
+    double tp = NormalizeDouble(isBuy ? price + CBSLDistance * CBRRR : price - CBSLDistance * CBRRR, _Digits);
+    CBTrade.SetExpertMagicNumber(sets.MagicNumber);
+
+    bool ok = true;
+    ulong t = CBFindPending(type);
+    if (t != 0)
     {
-        Print("Scaling skipped: expected 1 open position, found ", positions, ".");
-        return;
+        if (MathAbs(OrderGetDouble(ORDER_PRICE_OPEN) - price) > _Point / 2) ok = CBTrade.OrderModify(t, price, sl, tp, ORDER_TIME_GTC, 0);
     }
+    else if (isBuy) ok = CBTrade.BuyStop(CBLots, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, "CB Long");
+    else ok = CBTrade.SellStop(CBLots, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, "CB Short");
 
-    // Do not stack a second scaling order on top of an existing pending one.
-    for (int i = OrdersTotal() - 1; i >= 0; i--)
-    {
-        if (OrderGetTicket(i) == 0) continue;
-        if (OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
-        if ((sets.MagicNumber != 0) && (OrderGetInteger(ORDER_MAGIC) != sets.MagicNumber)) continue;
-        Print("Scaling skipped: a pending order already exists.");
-        return;
-    }
+    if (ok) return;
+    Print("Continuation breakout: ", (isBuy ? "buy" : "sell"), " stop at ", price, " rejected: ", CBTrade.ResultRetcodeDescription(), ". Retrying next bar.");
+    if (isBuy) CBBuyFailBar = bar;
+    else CBSellFailBar = bar;
+}
 
-    if (!PositionSelectByTicket(ticket)) return;
-    double entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-    double slPrice = PositionGetDouble(POSITION_SL);
-    bool isLong = PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY;
-    if (slPrice == 0)
-    {
-        Print("Scaling skipped: the open position has no SL, so 1R is unknown.");
-        return;
-    }
+// Server time to London time, for the session filter.
+int CBNthWeekday(const int year, const int month, const int weekday, const int n)
+{
+    MqlDateTime d;
+    ZeroMemory(d);
+    d.year = year;
+    d.mon = month;
+    d.day = 1;
+    MqlDateTime f;
+    TimeToStruct(StructToTime(d), f);
+    int day = 1 + (weekday - f.day_of_week + 7) % 7;
+    if (n > 0) return day + (n - 1) * 7;
+    int dim = (month == 2) ? (((year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0))) ? 29 : 28)
+              : ((month == 4) || (month == 6) || (month == 9) || (month == 11)) ? 30 : 31;
+    while (day + 7 <= dim) day += 7;
+    return day;
+}
 
-    // Scaling entry sits 1R beyond the first entry; its SL is the first entry.
-    double oneR = MathAbs(entryPrice - slPrice);
-    double scaleEntry = NormalizeDouble(isLong ? entryPrice + oneR : entryPrice - oneR, _Digits);
+// US DST: 2nd Sunday of March to 1st Sunday of November.
+bool CBIsUSDST(const datetime t)
+{
+    MqlDateTime d;
+    TimeToStruct(t, d);
+    if ((d.mon < 3) || (d.mon > 11)) return false;
+    if ((d.mon > 3) && (d.mon < 11)) return true;
+    if (d.mon == 3) return d.day >= CBNthWeekday(d.year, 3, 0, 2);
+    return d.day < CBNthWeekday(d.year, 11, 0, 1);
+}
 
-    // A STOP order is only valid while price has not yet reached 1R.
-    if ((isLong && SymbolInfoDouble(_Symbol, SYMBOL_ASK) >= scaleEntry) ||
-        (!isLong && SymbolInfoDouble(_Symbol, SYMBOL_BID) <= scaleEntry))
-    {
-        Print("Scaling skipped: price is already beyond 1R (", scaleEntry, ").");
-        return;
-    }
+// UK DST: last Sunday of March to last Sunday of October (01:00 UTC).
+bool CBIsUKDST(const datetime utc)
+{
+    MqlDateTime d;
+    TimeToStruct(utc, d);
+    if ((d.mon < 3) || (d.mon > 10)) return false;
+    if ((d.mon > 3) && (d.mon < 10)) return true;
+    int s = CBNthWeekday(d.year, d.mon, 0, -1);
+    if (d.mon == 3) return (d.day > s) || ((d.day == s) && (d.hour >= 1));
+    return (d.day < s) || ((d.day == s) && (d.hour < 1));
+}
 
-    TRADE_DIRECTION positionDirection = isLong ? Long : Short;
-    if (sets.TradeDirection != positionDirection) SwitchEntryDirection();
-
-    // Pending order type: cycle the order type button until it lands on Pending.
-    int guard = 0;
-    while (sets.EntryType != Pending && guard < 3)
-    {
-        ExtDialog.OnClickBtnOrderType();
-        guard++;
-    }
-
-    ExtDialog.m_EdtEntryLevel.Text(DoubleToString(scaleEntry, _Digits));
-    ExtDialog.OnEndEditEdtEntryLevel();
-    ExtDialog.m_EdtSL.Text(DoubleToString(entryPrice, _Digits));
-    ExtDialog.OnEndEditEdtSL();
-    ExtDialog.RefreshValues();
-    ChartRedraw();
-
-    DoTrade();
-
-    Print("Placed ", (isLong ? "BUY" : "SELL"), " STOP scaling order at ", scaleEntry, " (1R = ", DoubleToString(oneR / _Point, 0), " ticks), SL at first entry ", entryPrice);
+bool CBIsInSession(const datetime server)
+{
+    int offset = CustomCBServerGMTWinter + ((CustomCBServerUSDST && CBIsUSDST(server)) ? 1 : 0);
+    datetime utc = server - offset * 3600;
+    MqlDateTime d;
+    TimeToStruct(utc + (CBIsUKDST(utc) ? 3600 : 0), d);
+    if ((d.day_of_week == 0) || (d.day_of_week == 6)) return false;
+    int mins = d.hour * 60 + d.min;
+    return (mins >= CustomCBSessionStartHour * 60) && (mins < CustomCBSessionEndHour * 60);
 }
 
 void DoFetchWebCommands()
@@ -1500,9 +1728,9 @@ void OnChartEvent(const int id,
         {
             DoSetTPToEquityGoal();
         }
-        else if (HotkeyPressed(Hotkeys[HK_SetAdjustEntry], key))
+        else if (HotkeyPressed(Hotkeys[HK_ContinuationBreakout], key))
         {
-            DoPlaceScalingStopOrder();
+            DoToggleContinuationBreakout();
         }
         else if (HotkeyPressed(Hotkeys[HK_FindClosestSL], key))
         {
@@ -1606,6 +1834,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
 {
     if (trans.type != TRADE_TRANSACTION_DEAL_ADD) return;
     DoCancelOppositeOrders(trans.deal);
+    CBOnDealAdd(trans.deal);
 }
 
 // One-cancels-other: once a deal opens a position, delete pending orders of the opposite direction on this symbol.
