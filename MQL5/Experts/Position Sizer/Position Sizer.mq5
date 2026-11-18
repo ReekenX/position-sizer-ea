@@ -1055,14 +1055,12 @@ void DoContinuationBreakout()
         if (CBIsSwingLow(mid)) { CBLevelLow = iLow(_Symbol, _Period, mid); CBLowTaken = false; }
     }
 
-    // Session: close the breakout positions on the first tick after it ends.
+    // Session: outside it, pending orders are deleted below; open positions are left to run.
     long minute = (long)(TimeCurrent() / 60);
     if (minute != CBSessionMinute)
     {
         CBSessionMinute = minute;
-        bool wasInSession = CBInSession;
         CBInSession = CBIsInSession(TimeCurrent());
-        if (wasInSession && !CBInSession) CBCloseAllPositions();
     }
 
     bool armLong = CBInSession && !CBHighTaken && (CBLevelHigh > 0) && (ask < CBLevelHigh);
@@ -1171,19 +1169,6 @@ void CBDeleteAllPending()
         ulong t = OrderGetTicket(i);
         if (t == 0) continue;
         if (CBIsOwnOrder()) CBTrade.OrderDelete(t);
-    }
-}
-
-void CBCloseAllPositions()
-{
-    for (int i = PositionsTotal() - 1; i >= 0; i--)
-    {
-        ulong t = PositionGetTicket(i);
-        if (t == 0) continue;
-        if (PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
-        if ((sets.MagicNumber != 0) && (PositionGetInteger(POSITION_MAGIC) != sets.MagicNumber)) continue;
-        if (StringFind(PositionGetString(POSITION_COMMENT), "CB ") != 0) continue;
-        CBTrade.PositionClose(t);
     }
 }
 
