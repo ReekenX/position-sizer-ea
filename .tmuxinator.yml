@@ -3,10 +3,12 @@ name: meta-trader
 startup_window: shell
 
 windows:
-  - editor: nvim .
+  - editor:
+      - alias run="nvim ."
+      - run
   - shell:
       - tmux set-option set-titles-string 'meta-trader'
+      - clear
   - claude:
-      - alias run="tmux rename-window -t\${TMUX_PANE} 'claude'; clear; claude --dangerously-skip-permissions; tmux rename-window -t\${TMUX_PANE} '🔴 claude'"
+      - alias run="claude --dangerously-skip-permissions --resume '1HCB Strategy'"
       - run
-  - git: tig
