@@ -1013,7 +1013,9 @@ void DoToggleContinuationBreakout()
 
     ExtDialog.RefreshValues();
     CBSLDistance = MathAbs(sets.EntryLevel - sets.StopLossLevel);
+    // RRR follows the panel's TP line, so a TP typed in or dragged by hand is respected too.
     CBRRR = CustomTPMultiplier;
+    if ((CBSLDistance > 0) && (sets.TakeProfitLevel > 0)) CBRRR = MathAbs(sets.TakeProfitLevel - sets.EntryLevel) / CBSLDistance;
     CBLots = OutputPositionSize;
     if ((CBSLDistance <= 0) || (CBRRR <= 0) || (CBLots <= 0))
     {
@@ -1029,7 +1031,7 @@ void DoToggleContinuationBreakout()
     CBSellFailBar = 0;
     CBEnabled = true;
 
-    string info = "Continuation breakout ON | SL " + DoubleToString(CBSLDistance / _Point, 0) + " points | 1:" + DoubleToString(CBRRR, 1) + " RRR | " + DoubleToString(CBLots, 2) + " lots";
+    string info = "Continuation breakout ON | SL " + DoubleToString(CBSLDistance / _Point, 0) + " points | 1:" + DoubleToString(CBRRR, 2) + " RRR | " + DoubleToString(CBLots, 2) + " lots";
     Comment(info);
     Print(info);
 }
