@@ -45,7 +45,7 @@ input int CustomSafeTicks = 10; // Ticks to add to the safe SL
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 input bool CustomOCOEnabled = true; // Cancel opposite pending orders when one side gets filled (OCO)
-input int CustomCBSwing = 3; // Continuation breakout: swing candles on each side (1-5)
+input int CustomCBSwing = 3; // Continuation breakout: 1H swing candles on each side (1-5)
 input int CustomCBSessionStartHour = 8; // Continuation breakout: London session start (London time)
 input int CustomCBSessionEndHour = 17; // Continuation breakout: London session end (London time)
 input int CustomCBServerGMTWinter = 2; // Continuation breakout: broker server GMT offset in winter
@@ -1050,7 +1050,7 @@ void DoContinuationBreakout()
     if (bar != CBLastLevelBar)
     {
         CBLastLevelBar = bar;
-        int mid = CustomCBSwing + 1;
+        int mid = CBSwingBars() + 1;
         if (CBIsSwingHigh(mid)) { CBLevelHigh = iHigh(_Symbol, _Period, mid); CBHighTaken = false; }
         if (CBIsSwingLow(mid)) { CBLevelLow = iLow(_Symbol, _Period, mid); CBLowTaken = false; }
     }
@@ -1088,12 +1088,19 @@ void CBOnDealAdd(const ulong deal)
     }
 }
 
-// The candle at shift mid is a swing high if its high is above the highs of CustomCBSwing candles on each side.
+// CustomCBSwing counts 1H candles; convert it to bars of the chart timeframe (3 on 1H = 36 on 5M).
+int CBSwingBars()
+{
+    return (int)MathMax(1, MathRound(CustomCBSwing * (double)PeriodSeconds(PERIOD_H1) / PeriodSeconds(_Period)));
+}
+
+// The candle at shift mid is a swing high if its high is above the highs of CBSwingBars() candles on each side.
 bool CBIsSwingHigh(const int mid)
 {
+    int swing = CBSwingBars();
     double midHigh = iHigh(_Symbol, _Period, mid);
     if (midHigh == 0) return false;
-    for (int s = mid - CustomCBSwing; s <= mid + CustomCBSwing; s++)
+    for (int s = mid - swing; s <= mid + swing; s++)
     {
         if (s == mid) continue;
         if (iHigh(_Symbol, _Period, s) >= midHigh) return false;
@@ -1103,9 +1110,10 @@ bool CBIsSwingHigh(const int mid)
 
 bool CBIsSwingLow(const int mid)
 {
+    int swing = CBSwingBars();
     double midLow = iLow(_Symbol, _Period, mid);
     if (midLow == 0) return false;
-    for (int s = mid - CustomCBSwing; s <= mid + CustomCBSwing; s++)
+    for (int s = mid - swing; s <= mid + swing; s++)
     {
         if (s == mid) continue;
         if (iLow(_Symbol, _Period, s) <= midLow) return false;
@@ -1120,7 +1128,9 @@ void CBSeedLevels()
     CBLevelLow = 0;
     CBHighTaken = true;
     CBLowTaken = true;
-    for (int mid = CustomCBSwing + 1; mid < 200; mid++)
+    // Look back 200 1H candles' worth of chart bars.
+    int lookback = (int)MathMax(200, 200 * PeriodSeconds(PERIOD_H1) / PeriodSeconds(_Period));
+    for (int mid = CBSwingBars() + 1; mid < lookback; mid++)
     {
         if (CBLevelHigh == 0 && CBIsSwingHigh(mid))
         {
