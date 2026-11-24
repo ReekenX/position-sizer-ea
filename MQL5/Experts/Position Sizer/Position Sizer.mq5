@@ -1062,7 +1062,7 @@ void UpdateCornerText()
         ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
         ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_RIGHT_UPPER);
         ObjectSetInteger(0, name, OBJPROP_XDISTANCE, 10);
-        ObjectSetInteger(0, name, OBJPROP_YDISTANCE, 35);
+        ObjectSetInteger(0, name, OBJPROP_YDISTANCE, 30);
         ObjectSetInteger(0, name, OBJPROP_COLOR, clrRed);
         ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 14);
         ObjectSetString(0, name, OBJPROP_FONT, "Arial");
