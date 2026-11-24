@@ -45,6 +45,7 @@ input int CustomSafeTicks = 10; // Ticks to add to the safe SL
 input bool CustomWebFetchingEnabled = false; // Enable web command fetching?
 input string CustomWebCommandDomain = "https://www.example.org"; // URL to the web command domain (no slash)
 input bool CustomOCOEnabled = true; // Cancel opposite pending orders when one side gets filled (OCO)
+input string CustomCornerText = ""; // Text shown in the chart's top-right corner (empty = hidden)
 input int CustomCBSwing = 3; // Continuation breakout: 1H swing candles on each side (1-5)
 input int CustomCBSessionStartHour = 8; // Continuation breakout: London session start (London time)
 input int CustomCBSessionEndHour = 17; // Continuation breakout: London session end (London time)
@@ -654,6 +655,8 @@ int OnInit()
     // If symbol change with a reset was enacted.
     if (is_InitControlsValues_required) ExtDialog.InitControlsValues();
 
+    UpdateCornerText();
+
     return INIT_SUCCEEDED;
 }
 
@@ -670,6 +673,8 @@ void OnDeinit(const int reason)
         CBDeleteAllPending();
         Comment("");
     }
+
+    ObjectDelete(0, ObjectPrefix + "CornerText");
 
     if (reason == REASON_TEMPLATE) sets.TemplateChanged = true; // Will be used to select lines according to the DefaultLinesSelected input parameter.
 
@@ -1001,6 +1006,7 @@ void DoToggleContinuationBreakout()
         CBEnabled = false;
         CBDeleteAllPending();
         Comment("");
+        UpdateCornerText();
         Print("Continuation breakout stopped. Its pending orders were deleted.");
         return;
     }
@@ -1033,7 +1039,38 @@ void DoToggleContinuationBreakout()
 
     string info = "Continuation breakout ON | SL " + DoubleToString(CBSLDistance / _Point, 0) + " points | 1:" + DoubleToString(CBRRR, 2) + " RRR | " + DoubleToString(CBLots, 2) + " lots";
     Comment(info);
+    UpdateCornerText();
     Print(info);
+}
+
+// Red label in the top-right corner: the custom text, plus " | ON" while the continuation breakout runs.
+void UpdateCornerText()
+{
+    string name = ObjectPrefix + "CornerText";
+    string text = CustomCornerText;
+    if (CBEnabled) text += (text == "" ? "ON" : " | ON");
+    if (text == "")
+    {
+        ObjectDelete(0, name);
+        ChartRedraw();
+        return;
+    }
+
+    if (ObjectFind(0, name) < 0)
+    {
+        ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
+        ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+        ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_RIGHT_UPPER);
+        ObjectSetInteger(0, name, OBJPROP_XDISTANCE, 10);
+        ObjectSetInteger(0, name, OBJPROP_YDISTANCE, 25);
+        ObjectSetInteger(0, name, OBJPROP_COLOR, clrRed);
+        ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 14);
+        ObjectSetString(0, name, OBJPROP_FONT, "Arial");
+        ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+        ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+    }
+    ObjectSetString(0, name, OBJPROP_TEXT, text);
+    ChartRedraw();
 }
 
 void DoContinuationBreakout()
